@@ -1,0 +1,24 @@
+{
+    "name": "dl/tt",
+    "type": "library",
+    "description": "Type Template Engine",
+    "license": "MIT",
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/dlsrc/tt"
+        }
+    ],
+    "authors": [
+        {
+            "name": "Dmitry Lebedev",
+            "email": "dl@adios.ru",
+            "homepage": "https://adios.ru",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": ">=8.1",
+        "dl/generic": "^1.0.0"
+    }
+}
