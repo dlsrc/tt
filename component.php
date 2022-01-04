@@ -19,5 +19,5 @@ declare(strict_types=1);
 namespace dl\tt;
 
 abstract class Component {
-
+    
 }
