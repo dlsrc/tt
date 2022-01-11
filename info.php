@@ -8,7 +8,10 @@
 
     ------------------------------------------------------------------------
 
-    final class dl\tt\ru\Config
+    class dl\tt\Config
+
+	Конфигурация компилятора шаблонов.
+	Поддерживает интерфейс \dl\Sociable.
 
     ------------------------------------------------------------------------
 
@@ -16,12 +19,8 @@
 
 \******************************************************************************/
 declare(strict_types=1);
-namespace dl\tt\ru;
+namespace dl\tt;
 
-final class Config extends \dl\Getter {
-	protected function initialize(): void {
-		$this->_property['e_no_page']  = 'Объект композиции шаблона страницы не существует.';
-		$this->_property['e_no_tpl']   = 'Файл шаблона "{0}" не существует, либо доступ к нему ограничен.';
-        $this->_property['e_no_child'] = 'Дочерний компонент "{0}" не существует.';
-	}
+final class Info implements \dl\Sociable {
+	use \dl\Informer;
 }

@@ -21,9 +21,7 @@
 declare(strict_types=1);
 namespace dl\tt;
 
-final class Config extends \dl\Setter implements \dl\Sociable {
-	use \dl\Informer;
-
+final class Config extends \dl\Setter {
 	protected function initialize(): void	{
 		$this->_property['root']          = __NAMESPACE__.'\Document';
 

@@ -22,5 +22,6 @@ final class Config extends \dl\Getter {
 	protected function initialize(): void {
 		$this->_property['e_no_page'] = 'L\'oggetto composizione modello di pagina non esiste.';
 		$this->_property['e_no_tpl']  = 'Il file modello "{0}" non esiste o l\'accesso è limitato.';
+        $this->_property['e_no_child'] = 'Дочерний компонент "{0}" не существует.';
 	}
 }
