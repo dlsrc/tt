@@ -37,10 +37,10 @@ final class Builder {
 		$this->block[0] = $tpl;
 
 		if ('' == $this->block[0]) {
-			return Composite::emulate();
+			return Component::emulate();
 		}
 
-		$this->types[]  = 'ROOT';
+		$this->types[]  = Config::get()->root;
 		$this->names[]  = 'ROOT';
 		$this->id[]     = 'ROOT';
 		$this->before[] = '';
@@ -59,12 +59,26 @@ final class Builder {
 		$cfg = Config::get();
 
 		$this->component = [
-			'component'  => __NAMESPACE__.'\\Component',
-			'componentm' => __NAMESPACE__.'\\ComponentM',
-			'drive'      => __NAMESPACE__.'\\Drive',
-			'drivem'     => __NAMESPACE__.'\\DriveM',
-			'document'   => __NAMESPACE__.'\\Document',
-			'variator'   => __NAMESPACE__.'\\Variator'
+			'a_comp'      => __NAMESPACE__.'\\ActiveComposite',
+			'a_comp_map'  => __NAMESPACE__.'\\ActiveCompositeMap',
+			'f_comp'      => __NAMESPACE__.'\\FixedComposite',
+			'f_comp_map'  => __NAMESPACE__.'\\FixedCompositeMap',
+			'wa_comp'     => __NAMESPACE__.'\\WrappedActiveComposite',
+			'wa_comp_map' => __NAMESPACE__.'\\WrappedActiveCompositeMap',
+			'wf_comp'     => __NAMESPACE__.'\\WrappedFixedComposite',
+			'wf_comp_map' => __NAMESPACE__.'\\WrappedFixedCompositeMap',
+			'a_leaf'      => __NAMESPACE__.'\\ActiveLeaf',
+			'a_leaf_map'  => __NAMESPACE__.'\\ActiveLeafMap',
+			'f_leaf'      => __NAMESPACE__.'\\FixedLeaf',
+			'f_leaf_map'  => __NAMESPACE__.'\\FixedLeafMap',
+			'wa_leaf'     => __NAMESPACE__.'\\WrappedActiveLeaf',
+			'wa_leaf_map' => __NAMESPACE__.'\\WrappedActiveLeafMap',
+			'wf_leaf'     => __NAMESPACE__.'\\WrappedFixedLeaf',
+			'wf_leaf_map' => __NAMESPACE__.'\\WrappedFixedLeafMap',
+			'variator'    => __NAMESPACE__.'\\Variator',
+			'w_variator'  => __NAMESPACE__.'\\WrappedVariator',
+			'text'        => __NAMESPACE__.'\\Text',
+			'document'    => __NAMESPACE__.'\\Document',
 		];
 
 		$this->pattern = [
@@ -179,18 +193,31 @@ final class Builder {
 				else {
 					$this->id[$k] = $match[6];
 				}
-
-				if ($variant == $match[1]) {
-					$this->types[$k] = $this->component['variator'];
-				}
-				elseif ($driver == $match[1]) {
-					$this->types[$k] = $this->component['drive'];
+				
+				if ('' == $this->before[$k]) {
+					if ($variant == $match[1]) {
+						$this->types[$k] = $this->component['variator'];
+					}
+					elseif ($driver == $match[1]) {
+						$this->types[$k] = $this->component['f_comp'];
+					}
+					else {
+						$this->types[$k] = $this->component['a_comp'];
+					}
 				}
 				else {
-					$this->types[$k] = $this->component['component'];
+					if ($variant == $match[1]) {
+						$this->types[$k] = $this->component['w_variator'];
+					}
+					elseif ($driver == $match[1]) {
+						$this->types[$k] = $this->component['wf_comp'];
+					}
+					else {
+						$this->types[$k] = $this->component['wa_comp'];
+					}
 				}
 
-				$this->block[$i] = \str_replace($match[0], '{'.Composite::NS.$match[2].'}', $this->block[$i]);
+				$this->block[$i] = \str_replace($match[0], '{'.Component::NS.$match[2].'}', $this->block[$i]);
 				$this->child[$i][] = $k;
 				$k++;
 			}
@@ -230,7 +257,7 @@ final class Builder {
 				}
 
 				if (\str_starts_with($match[1], $refns)) {
-					$match[1] = Composite::NS.\substr($match[1], 1);
+					$match[1] = Component::NS.\substr($match[1], 1);
 				}
 
 				if (!isset($this->stack[$i][$match[1]])) {
@@ -255,50 +282,156 @@ final class Builder {
 		}
 	}
 
+	private function identifyType(int $id, string $leaf): void {
+		if (isset($this->child[$id][0])) {
+			$this->types[$id] = $this->component[$leaf];
+		}
+
+		foreach (\array_keys($this->stack[$id]) as $var) {
+			if (\is_string($var) && \str_contains($var, Component::NS) && Component::NS != $var[0]) {
+				$this->types[$id] = $this->types[$id].'Map';
+				break;
+			}
+		}
+	}
+
 	private function prepareComponents(): void {
 		$cfg = Config::get();
 
 		for ($i = 0; $i < $this->size; $i++) {
 			switch ($this->types[$i]) {
+			case $this->component['a_comp']:
+				$this->identifyType($i, 'a_leaf');
+				break;
 
-			case $this->component['component']:
-				foreach (\array_keys($this->stack[$i]) as $var) {
-					if (\is_string($var) && \str_contains($var, Composite::NS) && Composite::NS != $var[0]) {
-						$this->types[$i] = $this->component['componentm'];
-						break; // foreach break
-					}
+			case $this->component['wa_comp']:
+				$this->identifyType($i, 'wa_leaf');
+				break;
+
+			case $this->component['f_comp']:
+				$this->identifyType($i, 'f_leaf');
+				break;
+
+			case $this->component['wf_comp']:
+				$this->identifyType($i, 'wf_leaf');
+				break;
+
+			case $this->component['document']:
+				if (!isset($this->child[$i][0])) {
+					$this->types[$i] = $this->component['text'];
 				}
 
+				break;
+			}
+
+			switch ($this->types[$i]) {
+			case $this->component['a_comp']:
+			case $this->component['a_comp_map']:
+
 				$this->block[$i] = new $this->types[$i]([
-					'_stack'  => $this->stack[$i],
+					'_chain'     => $this->stack[$i],
+					'_ref'       => $this->ref[$i],
+					'_class'     => $this->id[$i],
+					'_name'      => $this->names[$i],
+					'_component' => [],
+					'_result'    => ''
+				]);
+				break;
+
+			case $this->component['wa_comp']:
+			case $this->component['wa_comp_map']:
+
+				$this->block[$i] = new $this->types[$i]([
+					'_chain'     => $this->stack[$i],
+					'_ref'       => $this->ref[$i],
+					'_class'     => $this->id[$i],
+					'_name'      => $this->names[$i],
+					'_before'    => $this->before[$i],
+					'_after'     => $this->after[$i],
+					'_component' => [],
+					'_result'    => ''
+				]);
+				break;
+
+			case $this->component['f_comp']:
+			case $this->component['f_comp_map']:
+
+				$this->block[$i] = new $this->types[$i]([
+					'_chain'     => $this->stack[$i],
+					'_ref'       => $this->ref[$i],
+					'_class'     => $this->id[$i],
+					'_name'      => $this->names[$i],
+					'_component' => [],
+					'_exert'     => false,
+					'_result'    => ''
+				]);
+				break;
+
+			case $this->component['wf_comp']:
+			case $this->component['wf_comp_map']:
+
+				$this->block[$i] = new $this->types[$i]([
+					'_chain'     => $this->stack[$i],
+					'_ref'       => $this->ref[$i],
+					'_class'     => $this->id[$i],
+					'_name'      => $this->names[$i],
+					'_before'    => $this->before[$i],
+					'_after'     => $this->after[$i],
+					'_component' => [],
+					'_exert'     => false,
+					'_result'    => ''
+				]);
+				break;
+
+			case $this->component['a_leaf']:
+			case $this->component['a_leaf_map']:
+
+				$this->block[$i] = new $this->types[$i]([
+					'_chain'  => $this->stack[$i],
 					'_ref'    => $this->ref[$i],
 					'_class'  => $this->id[$i],
 					'_name'   => $this->names[$i],
-					'_before' => $this->before[$i],
-					'_after'  => $this->after[$i],
-					'_child'  => [],
-					'_size'   => 0,
 					'_result' => ''
 				]);
 				break;
 
-			case $this->component['drive']:
-				foreach (\array_keys($this->stack[$i]) as $var) {
-					if (\is_string($var) && \str_contains($var, Composite::NS) && Composite::NS != $var[0]) {
-						$this->types[$i] = $this->component['drivem'];
-						break;
-					}
-				}
+			case $this->component['wa_leaf']:
+			case $this->component['wa_leaf_map']:
 
 				$this->block[$i] = new $this->types[$i]([
-					'_stack'  => $this->stack[$i],
+					'_chain'  => $this->stack[$i],
 					'_ref'    => $this->ref[$i],
 					'_class'  => $this->id[$i],
 					'_name'   => $this->names[$i],
 					'_before' => $this->before[$i],
 					'_after'  => $this->after[$i],
-					'_child'  => [],
-					'_size'   => 0,
+					'_result' => ''
+				]);
+				break;
+
+			case $this->component['f_leaf']:
+			case $this->component['f_leaf_map']:
+
+				$this->block[$i] = new $this->types[$i]([
+					'_chain'  => $this->stack[$i],
+					'_ref'    => $this->ref[$i],
+					'_class'  => $this->id[$i],
+					'_name'   => $this->names[$i],
+					'_exert'  => false,
+					'_result' => ''
+				]);
+				break;
+
+			case $this->component['wf_leaf']:
+			case $this->component['wf_leaf_map']:
+
+				$this->block[$i] = new $this->types[$i]([
+					'_chain'  => $this->stack[$i],
+					'_ref'    => $this->ref[$i],
+					'_class'  => $this->id[$i],
+					'_name'   => $this->names[$i],
+					'_before' => $this->before[$i],
+					'_after'  => $this->after[$i],
 					'_exert'  => false,
 					'_result' => ''
 				]);
@@ -307,39 +440,64 @@ final class Builder {
 			case $this->component['variator']:
 				if (isset($this->child[$i][0])) {
 					$this->block[$i] = new $this->types[$i]([
-						'_class'   => $this->id[$i],
-						'_name'    => $this->names[$i],
-						'_before'  => $this->before[$i],
-						'_after'   => $this->after[$i],
-						'_child'   => [],
-						'_size'    => 0,
-						'_variant' => $this->names[$this->child[$i][0]],
-						'_result'  => ''
+						'_class'     => $this->id[$i],
+						'_name'      => $this->names[$i],
+						'_component' => [],
+						'_variant'   => $this->names[$this->child[$i][0]],
+						'_result'    => ''
 					]);
 				}
 				else {
 					$this->block[$i] = Component::emulate();
 				}
+
+				break;
+
+			case $this->component['w_variator']:
+				if (isset($this->child[$i][0])) {
+					$this->block[$i] = new $this->types[$i]([
+						'_class'     => $this->id[$i],
+						'_name'      => $this->names[$i],
+						'_before'    => $this->before[$i],
+						'_after'     => $this->after[$i],
+						'_component' => [],
+						'_variant'   => $this->names[$this->child[$i][0]],
+						'_result'    => ''
+					]);
+				}
+				else {
+					$this->block[$i] = Component::emulate();
+				}
+
 				break;
 
 			case $this->component['document']:
 				$this->block[$i] = new $this->types[$i]([
-					'_stack'   => $this->stack[$i],
-					'_ref'     => $this->ref[$i],
-					'_class'   => $this->id[$i],
-					'_name'    => $this->names[$i],
-					'_before'  => '',
-					'_after'   => '',
-					'_child'   => [],
-					'_size'    => 0,
-					'_general' => $this->globs,
-					'_first'   => $cfg->global_begin,
-					'_last'    => $cfg->global_end,
-					'_pat'     => [],
-					'_rep'     => [],
-					'_str'     => [],
-					'_result'  => ''
+					'_chain'     => $this->stack[$i],
+					'_ref'       => $this->ref[$i],
+					'_class'     => $this->id[$i],
+					'_name'      => $this->names[$i],
+					'_component' => [],
+					'_global'    => $this->globs,
+					'_first'     => $cfg->global_begin,
+					'_last'      => $cfg->global_end,
+					'_result'    => ''
 				]);
+
+				break;
+
+			case $this->component['text']:
+				$this->block[$i] = new $this->types[$i]([
+					'_chain'     => $this->stack[$i],
+					'_ref'       => $this->ref[$i],
+					'_class'     => $this->id[$i],
+					'_name'      => $this->names[$i],
+					'_global'    => $this->globs,
+					'_first'     => $cfg->global_begin,
+					'_last'      => $cfg->global_end,
+					'_result'    => ''
+				]);
+
 				break;
 
 			default:

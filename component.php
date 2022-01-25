@@ -8,7 +8,53 @@
 
     ------------------------------------------------------------------------
 
-    abstract class dl\tt\Component
+    abstract class Component          implements \dl\DirectCallable
+
+	abstract class Composite          extends Component
+	abstract class Variant            extends Component
+	abstract class Leaf               extends Component use Sequence
+	abstract class Performer          extends Composite use Sequence
+	abstract class DependentLeaf      extends Performer use DependentComponent
+	abstract class DependentPerformer extends Performer use DependentComponent
+
+	trait Sequence
+	trait DependentComponent
+	trait IndependentComponent
+	trait ReadyComponent         use IndependentComponent
+	trait ReadyVariant           use IndependentComponent
+	trait WrappedComponent
+	trait UnwrappedComponent
+	trait RootComponent          use UnwrappedComponent
+	trait Insertion
+	trait InsertionMap
+	trait RawResult
+	trait Result                 use RawResult
+	trait WrappedResult          use RawResult
+	trait DependentRawResult
+	trait DependentResult        use DependentRawResult
+	trait WrappedDependentResult use DependentRawResult
+
+	final class ActiveComposite           extends Performer          use Insertion, ReadyComponent, UnwrappedComponent, Result
+	final class ActiveCompositeMap        extends Performer          use InsertionMap, ReadyComponent, UnwrappedComponent, Result
+	final class FixedComposite            extends DependentPerformer use Insertion, UnwrappedComponent, DependentResult
+	final class FixedCompositeMap         extends DependentPerformer use InsertionMap, UnwrappedComponent, DependentResult
+	final class Document                  extends Performer          use RootComponent, IndependentComponent
+	final class WrappedActiveComposite    extends Performer          use WrappedComponent, ReadyComponent, Insertion, WrappedResult
+	final class WrappedActiveCompositeMap extends Performer          use WrappedComponent, ReadyComponent, InsertionMap, WrappedResult
+	final class WrappedFixedComposite     extends DependentPerformer use WrappedComponent, Insertion, WrappedDependentResult
+	final class WrappedFixedCompositeMap  extends DependentPerformer use WrappedComponent, InsertionMap, WrappedDependentResult
+	final class ActiveLeaf                extends Leaf               use Insertion, UnwrappedComponent, ReadyComponent, Result
+	final class ActiveLeafMap             extends Leaf               use InsertionMap, UnwrappedComponent, ReadyComponent Result
+	final class FixedLeaf                 extends DependentLeaf      use Insertion, UnwrappedComponent, DependentResult
+	final class FixedLeafMap              extends DependentLeaf      use InsertionMap, UnwrappedComponent, DependentResult
+	final class Text                      extends Leaf               use RootComponent, IndependentComponent
+	final class WrappedActiveLeaf         extends Leaf               use WrappedComponent, ReadyComponent, Insertion, WrappedResult
+	final class WrappedActiveLeafMap      extends Leaf               use WrappedComponent, ReadyComponent, InsertionMap, WrappedResult
+	final class WrappedFixedLeaf          extends DependentLeaf      use WrappedComponent, Insertion, WrappedDependentResult
+	final class WrappedFixedLeafMap       extends DependentLeaf      use WrappedComponent, InsertionMap, WrappedDependentResult
+	final class Variator                  extends Variant            use UnwrappedComponent, ReadyVariant, Result
+	final class WrappedVariator           extends Variant            use WrappedComponent, ReadyVariant, WrappedResult
+	final class Emulator                  extends Component
 
     ------------------------------------------------------------------------
 
@@ -16,72 +62,115 @@
 
 \******************************************************************************/
 declare(strict_types=1);
-namespace dl\markup;
+namespace dl\tt;
 
-abstract class Composite implements \dl\DirectCallable {
-	public const NS = '.';
+abstract class Component implements \dl\DirectCallable {
+	final public const NS = '.';
 
-	protected string $_name;   // Snippet name
-	protected string $_class;  // Snippet class
-	protected array  $_child;  // Children list
-	protected int    $_size;   // Children list size
-	protected string $_before; // Wrapper text before result string
-	protected string $_after;  // Wrapper text after result string
-	protected string $_result; // Component result string
+	abstract public function attach(Component $c): void;
+	abstract public function drop(): void;
+	abstract public function isComponent(string $name): bool;
+	abstract public function getChild(string $class): Component;
+	abstract public function getChildName(string $class): string|null;
+	abstract public function getChildNames(string $class): array;
+	abstract public function __call(string $name, array $value): bool;
+	abstract public function __get(string $name): Component;
+	abstract public function __isset(string $name): bool;
+	abstract public function __unset(string $name): void;
+	abstract public function __set(string $name, string|int|float $value): void;
+	abstract public function getResult(): string;
+	abstract public function getRawResult(): string;
+	abstract public function isReady(): bool;
+	abstract public function insert(string $text): void;
+	abstract public function unwrap(): void;
+	abstract public function common(string $name, string|int|float $value): void;
+	abstract public function ready(): void;
+	abstract protected function notify(): void;
 
-	public static function emulate(): Emulator {
-		return new Emulator([
-			'_stack'   => [],
-			'_ref'     => [],
-			'_child'   => [],
-			'_class'   => 'EMULATOR',
-			'_name'    => 'EMULATOR',
-			'_before'  => '',
-			'_after'   => '',
-			'_result'  => '',
-			'_size'    => 0,
-		]);
-	}
+    protected string $_name;
+    protected string $_class;
+    protected string $_result;
 
 	public function __construct(array $state) {
 		$this->_name   = $state['_name'];
 		$this->_class  = $state['_class'];
-		$this->_child  = $state['_child'];
-		$this->_size   = $state['_size'];
-		$this->_before = $state['_before'];
-		$this->_after  = $state['_after'];
 		$this->_result = '';
 	}
 
-	public function __clone(): void {
-		foreach (\array_keys($this->_child) as $name) {
-			$this->_child[$name] = clone $this->_child[$name];
-		}
-	}
-
-	public function getName(): string {
+	final public function getName(): string {
 		return $this->_name;
 	}
 
-	public function getClass(): string {
+	final public function getClass(): string {
 		return $this->_class;
 	}
 
-	public function isClass(string $class): bool {
-		if ($this->_class == $class) {
-			return true;
-		}
-
-		return false;
+	final public function isClass(string $class): bool {
+		return $this->_class == $class;
 	}
 
-	public function isComponent(string $name): bool {
-		if (isset($this->_child[$name])) {
+	final protected function update(): void {
+		$this->_result = '';
+	}
+
+	final public static function emulate(): Emulator {
+		return new Emulator([
+			'_class'   => 'Emulator',
+			'_name'    => 'Emulator',
+			'_result'  => '',
+		]);
+	}
+
+	final protected static function error(string $info, Code $code): void {
+		if (!Mode::Product->current()) {
+			if (Mode::Develop->current()) {
+				throw new Failure(\dl\Error::log(Info::message($info), $code));
+			}
+			else {
+				\dl\Error::log(Info::message($info), $code);
+			}
+		}
+	}
+}
+
+abstract class Composite extends Component {
+    protected array $_component;
+
+	public function __construct(array $state) {
+		parent::__construct($state);
+        $this->_component = $state['_component'];
+	}
+
+	final public function __clone(): void {
+		foreach (\array_keys($this->_component) as $name) {
+			$this->_component[$name] = clone $this->_component[$name];
+		}
+	}
+
+	final public function __isset(string $name): bool {
+		return isset($this->_component[$name]);
+	}
+
+	final public function attach(Component $c): void {
+		$name = $c->getName();
+		$this->_component[$name] = $c;
+	}
+
+	final public function drop(): void {
+		foreach ($this->_component as $component) {
+			$component->drop();
+		}
+
+		$this->update();
+	}
+
+	final public function isComponent(string $name): bool {
+		if (isset($this->_component[$name])) {
 			return true;
 		}
 
-		if (\str_contains($name, self::NS)) {
-			$branch = \explode(self::NS, $name);
+		if (\str_contains($name, Component::NS)) {
+			$branch = \explode(Component::NS, $name);
 			$com = $this;
 
 			foreach ($branch as $n) {
@@ -93,25 +182,24 @@ abstract class Composite implements \dl\DirectCallable {
 			}
 
 			return true;
-
 		}
 
 		return false;
 	}
 
-	public function getChild(string $class): Composite|null {
-		foreach ($this->_child as $child) {
-			if ($child->isClass($class)) {
-				return $child;
+	final public function getChild(string $class): Component {
+		foreach ($this->_component as $component) {
+			if ($component->isClass($class)) {
+				return $component;
 			}
 		}
 
-		return null;
+		return Component::emulate();
 	}
 
-	public function getChildName(string $class): string|null {
-		foreach ($this->_child as $name => $child) {
-			if ($child->isClass($class)) {
+	final public function getChildName(string $class): string|null {
+		foreach ($this->_component as $name => $component) {
+			if ($component->isClass($class)) {
 				return $name;
 			}
 		}
@@ -119,11 +207,11 @@ abstract class Composite implements \dl\DirectCallable {
 		return null;
 	}
 
-	public function getChildNames(string $class): array {
+	final public function getChildNames(string $class): array {
 		$names = [];
 
-		foreach ($this->_child as $name => $child) {
-			if ($child->isClass($class)) {
+		foreach ($this->_component as $name => $component) {
+			if ($component->isClass($class)) {
 				$names[] = $name;
 			}
 		}
@@ -131,271 +219,30 @@ abstract class Composite implements \dl\DirectCallable {
 		return $names;
 	}
 
-	public function update(): void {
-		$this->_result = '';
-	}
-
-	public function getResult(): string {
-		if ('' != $this->_result) {
-			return $this->_before.$this->_result.$this->_after;
-		}
-
-		return '';
-	}
-
-	public function getRawResult(): string {
-		return $this->_result;
-	}
-
-	public function isReady(): bool {
-		if ('' == $this->_result) {
-			return false;
-		}
-
-		return true;
-	}
-
-	public function insert(string $text): void {
-		$this->_result.= $text;
-	}
-
-	public function unwrap(): void {
-		$this->_before  = '';
-		$this->_after = '';
-	}
-
-	public function drop(): void {
-		foreach ($this->_child as $child) {
-			$child->drop();
-		}
-
-		$this->update();
-	}
-}
-
-class Component extends Composite {
-	protected array $_ref;
-	protected array $_stack;
-
-	public function __construct(array $state) {
-		parent::__construct($state);
-
-		$this->_ref   = $state['_ref'];
-		$this->_stack = $state['_stack'];
-
-		foreach ($this->_ref as $k => $v) {
-			$this->_stack[$k] =&$this->_stack[$v];
-		}
-	}
-
-	public function __call(string $name, array $value): bool {
-		if (!isset($this->_child[$name])) {
-			return false;
-		}
-
-		if (isset($value[0])) {
-			foreach ($value[0] as $key => $val) {
-				$this->_child[$name]->$key = $val;
-			}
-
-			$this->_child[$name]->ready();
-		}
-
-		return true;
-	}
-
-	public function __get(string $name): Composite {
-		if (isset($this->_child[$name])) {
-			return $this->_child[$name];
-		}
-
-		return Composite::emulate();
-	}
-
-	public function __isset(string $name): bool {
-		return isset($this->_child[$name]);
-	}
-
-	public function __unset(string $name): void {
-		if (isset($this->_child[$name])) {
-			$this->_stack[Composite::NS.$name] = $this->_child[$name]->getResult();
-			unset($this->_child[$name]);
-		}
-	}
-
-	public function __set(string $name, int|float|string $value): void {
-		if (isset($this->_stack[$name])) {
-			$this->_stack[$name] = $value;
-		}
-	}
-
-	public function ready(): void {
-		$this->notify();
-		$this->_result.= \implode('', $this->_stack);
-	}
-
-	public function attach(Composite $component): void {
-		$name = $component->getName();
-		$this->_child[$name] = $component;
-		$this->_size++;
-	}
-
-	public function notify(): void {
-		foreach ($this->_child as $ob) {
-			$name = Composite::NS.$ob->getName();
-			$this->_stack[$name] = $ob->getResult();
-			$ob->update();
-		}
-	}
-
-	public function common(string $name, int|float|string $value): void {
-		if (isset($this->_stack[$name])) {
-			$this->_stack[$name] = $value;
-		}
-
-		foreach ($this->_child as $child) {
-			$child->common($name, $value);
+	final protected function notify(): void {
+		foreach ($this->_component as $component) {
+			$name = Component::NS.$component->getName();
+			$this->_chain[$name] = $component->getResult();
+			$component->update();
 		}
 	}
 }
 
-class Drive extends Component {
-	protected bool $_exert;
+abstract class Variant extends Composite {
+    protected string $_variant;
 
 	public function __construct(array $state) {
 		parent::__construct($state);
-		$this->_exert = $state['_exert'];
+        $this->_variant = $state['_variant'];
 	}
 
-	public function ready(): void {
-		$this->_exert = true;
-	}
-
-	public function isReady(): bool {
-		foreach ($this->_child as $ob) {
-			if ($ob->isReady()) return true;
-		}
-
-		return false;
-	}
-
-	public function getResult(): string {
-		if ($result = $this->getRawResult()) {
-			$this->_result = '';
-			return $this->_before.$result.$this->_after;
-		}
-
-		return '';
-	}
-
-	public function getRawResult(): string {
-		if ($this->_exert) {
-			$this->_exert = false;
-
-			if ($this->_size) {
-				$this->notify();
-			}
-
-			$this->_result = \implode('', $this->_stack);
-		}
-
-		return $this->_result;
-	}
-
-	public function insert(string $text): void {
-		$this->_result = $text;
-		$this->_exert = false;
-	}
-}
-
-final class Document extends Component implements \Stringable {
-	protected array  $_general;
-	protected string $_first;
-	protected string $_last;
-
-	public function __construct(array $state) {
-		parent::__construct($state);
-		$this->_general = $state['_general'];
-		$this->_first   = $state['_first'];
-		$this->_last    = $state['_last'];
-	}
-
-	public function __set(string $name, int|float|string $value): void {
-		if (\is_array($value)) {
-			foreach ($value as $key => $val) {
-				$this->__set($name.Composite::NS.$key, $val);
-			}
-		}
-		elseif (isset($this->_general[$this->_first.$name.$this->_last])) {
-			$this->_general[$this->_first.$name.$this->_last] = $value;
-		}
-		else {
-			parent::__set($name, $value);
-		}
-	}
-
-	public function add(string $name, int|float|string $value=''): void {
-		$this->_general[$this->_first.$name.$this->_last] = $value;
-	}
-
-	public function ready(): void {
-		if ('' == $this->_result) {
-			$this->notify();
-			$this->_result = \implode('', $this->_stack);
-			
-			if (!empty($this->_general)) {
-				$this->_result = \str_replace(
-					\array_keys($this->_general),
-					$this->_general,
-					$this->_result
-				);
-			}
-		}
-	}
-
-	public function getResult(): string {
-		$this->ready();
-		return $this->_result;
-	}
-
-	public function getRawResult(): string {
-		return $this->getResult();
-	}
-
-	public function insert(string $text): void {
-		return;
-	}
-
-	public function __toString(): string {
-		$this->ready();
-		return $this->_result;
-	}
-
-	public function force(string $name, string $text): bool {
-		if (!isset($this->_child[$name])) {
-			return false;
-		}
-
-		$this->_child[$name]->insert($text);
-		return true;
-	}
-}
-
-class Variator extends Composite {
-	protected string $_variant;
-
-	public function __construct(array $state) {
-		parent::__construct($state);
-		$this->_variant = $state['_variant'];
-	}
-
-	public function __call(string $name, array $value): bool {
-		if (isset($this->_child[$name])) {
+	final public function __call(string $name, array $value): bool {
+		if (isset($this->_component[$name])) {
 			$this->_variant = $name;
 
 			if (isset($value[0])) {
 				foreach ($value[0] as $key => $val) {
-					$this->_child[$name]->$key = $val;
+					$this->_component[$name]->$key = $val;
 				}
 
 				$this->ready();
@@ -407,96 +254,537 @@ class Variator extends Composite {
 		return false;
 	}
 
-	public function __get(string $name): Composite {
-		if (isset($this->_child[$name])) {
+	final public function __get(string $name): Component {
+		if (isset($this->_component[$name])) {
 			$this->_variant = $name;
-			return $this->_child[$name];
+			return $this->_component[$name];
 		}
 
-		return Composite::emulate();
+		Component::error('e_no_child', Code::Component);
+		return Component::emulate();
 	}
 
-	public function __isset(string $name): bool {
-		if (isset($this->_child[$name])) {
-			$this->_variant = $name;
-			return true;
+	final public function __unset(string $name): void {
+		unset($this->_component[$name]);
+	}
+
+	final public function __set(string $name, int|float|string|array $value): void {
+		$this->_component[$this->_variant]->$name = $value;
+	}
+
+	final public function common(string $name, int|float|string $value): void {
+		foreach ($this->_component as $component) {
+			$component->common($name, $value);
+		}
+	}
+}
+
+trait Sequence {
+    protected array $_var;
+	protected array $_ref;
+	protected array $_chain;
+
+	public function __construct(array $state) {
+		parent::__construct($state);
+        $this->_var   = $state['_var'];
+        $this->_ref   = $state['_ref'];
+        $this->_chain = $state['_chain'];
+
+		foreach ($this->_ref as $i => $name) {
+			$this->_chain[$i] =&$this->_var[$name];
+		}
+	}
+}
+
+abstract class Leaf extends Component {
+    use Sequence;
+
+	final public function __call(string $name, array $value): bool {
+		return false;
+	}
+
+	final public function __get(string $name): Component {
+		Component::error('e_no_child', Code::Component);
+		return Component::emulate();
+	}
+
+	final public function __isset(string $name): bool {
+		return false;
+	}
+
+	final public function __unset(string $name): void {}
+
+	final public function attach(Component $c): void {}
+
+	final public function drop(): void {
+		$this->_result = '';
+	}
+
+	final public function isComponent(string $name): bool {
+		return false;
+	}
+
+	final public function getChild(string $class): Component {
+		return Component::emulate();
+	}
+
+	final public function getChildName(string $class): string|null {
+		return null;
+	}
+
+	final public function getChildNames(string $class): array {
+		return [];
+	}
+
+	final public function common(string $name, int|float|string $value): void {
+		if (isset($this->_chain[$name])) {
+			$this->_chain[$name] = $value;
+		}
+	}
+
+	final protected function notify(): void {}
+}
+
+abstract class Performer extends Composite {
+    use Sequence;
+
+	final public function __call(string $name, array $value): bool {
+		if (!isset($this->_component[$name])) {
+			return false;
+		}
+
+		if (isset($value[0])) {
+			foreach ($value[0] as $key => $val) {
+				$this->_component[$name]->$key = $val;
+			}
+
+			$this->_component[$name]->ready();
+		}
+
+		return true;
+	}
+
+	final public function __get(string $name): Component {
+		if (isset($this->_component[$name])) {
+			return $this->_component[$name];
+		}
+
+		Component::error('e_no_child', Code::Component);
+		return Component::emulate();
+	}
+
+	final public function __unset(string $name): void {
+		if (isset($this->_component[$name])) {
+			$this->_chain[Component::NS.$name] = $this->_component[$name]->getResult();
+			unset($this->_component[$name]);
+		}
+	}
+
+	final public function common(string $name, int|float|string $value): void {
+		if (isset($this->_chain[$name])) {
+			$this->_chain[$name] = $value;
+		}
+
+		foreach ($this->_component as $component) {
+			$component->common($name, $value);
+		}
+	}
+}
+
+trait DependentComponent {
+	protected bool $_exert;
+
+	public function __construct(array $state) {
+		parent::__construct($state);
+		$this->_exert = false;
+	}
+
+	public function ready(): void {
+		$this->_exert = true;
+	}
+
+	public function isReady(): bool {
+		foreach ($this->_component as $component) {
+			if ($component->isReady()) return true;
 		}
 
 		return false;
 	}
+}
 
-	public function __unset(string $name): void {
-		unset($this->_child[$name]);
+trait IndependentComponent {
+	public function isReady(): bool {
+		return '' != $this->_result;
 	}
+}
 
-	public function __set(string $name, int|float|string $value): void {
-		$this->_child[$this->_variant]->$name = $value;
-	}
-
-	public function attach(Composite $component): void {
-		$name = $component->getName();
-		$this->_child[$name] = $component;
-
-		if ('' == $this->_variant) {
-			$this->_variant = $name;
-		}
-
-		$this->_size++;
-	}
+trait ReadyComponent {
+	use IndependentComponent;
 
 	public function ready(): void {
-		$this->_child[$this->_variant]->ready();
-		$this->_result.= $this->_child[$this->_variant]->getResult();
-		$this->_child[$this->_variant]->update();
-	}
-
-	public function common(string $name, int|float|string $value): void {
-		foreach ($this->_child as $child) {
-			$child->common($name, $value);
-		}
+		$this->notify();
+		$this->_result.= \implode('', $this->_chain);
 	}
 }
 
-class ComponentM extends Component {
-	public function __set(string $name, int|float|string $value): void {
+trait ReadyVariant {
+	use IndependentComponent;
+
+	public function ready(): void {
+		$this->_component[$this->_variant]->ready();
+		$this->_result.= $this->_component[$this->_variant]->getResult();
+		$this->_component[$this->_variant]->update();
+	}
+}
+
+abstract class DependentLeaf extends Leaf {
+	use DependentComponent;
+}
+
+abstract class DependentPerformer extends Performer {
+    use DependentComponent;
+}
+
+trait WrappedComponent {
+	protected string $_before;
+	protected string $_after;
+
+	public function __construct(array $state) {
+		parent::__construct($state);
+		$this->_before = $state['_before'];
+		$this->_after  = $state['_after'];
+	}
+
+	final public function unwrap(): void {
+		$this->_before  = '';
+		$this->_after = '';
+	}
+}
+
+trait UnwrappedComponent {
+	final public function unwrap(): void {}
+}
+
+trait RootComponent {
+	use UnwrappedComponent;
+
+	protected array  $_global;
+	protected string $_first;
+	protected string $_last;
+
+	public function __construct(array $state) {
+		parent::__construct($state);
+		$this->_global = $state['_global'];
+		$this->_first  = $state['_first'];
+		$this->_last   = $state['_last'];
+	}
+
+	final public function __set(string $name, int|float|string|array $value): void {
 		if (\is_array($value)) {
 			foreach ($value as $key => $val) {
-				$this->__set($name.Composite::NS.$key, $val);
+				$this->__set($name.Component::NS.$key, $val);
 			}
 		}
-		elseif (isset($this->_stack[$name])) {
-			$this->_stack[$name] = $value;
+		elseif (isset($this->_global[$this->_first.$name.$this->_last])) {
+			$this->_global[$this->_first.$name.$this->_last] = $value;
+		}
+		else {
+			parent::__set($name, $value);
 		}
 	}
-}
 
-class DriveM extends Drive {
-	public function __set(string $name, int|float|string $value): void {
-		if (\is_array($value)) {
-			foreach ($value as $key => $val) {
-				$this->__set($name.Composite::NS.$key, $val);
-			}
-		}
-		elseif (isset($this->_stack[$name])) {
-			$this->_stack[$name] = $value;
-		}
-	}
-}
-
-final class Emulator extends Component implements \Stringable {
-	public function __call(string $name, array $value): bool {
-		return true;
+	final public function add(string $name, int|float|string $value=''): void {
+		$this->_global[$this->_first.$name.$this->_last] = $value;
 	}
 
-	public function __get(string $name): Emulator {
-		return $this;
+	final public function __toString(): string {
+		$this->ready();
+		return $this->_result;
 	}
 
-	public function __set(string $name, int|float|string $value): void {
+	final public function getResult(): string {
+		$this->ready();
+		return $this->_result;
+	}
+
+	final public function getRawResult(): string {
+		return $this->getResult();
+	}
+
+	final public function insert(string $text): void {
 		return;
 	}
 
-	public function __toString(): string {
+	final public function ready(): void {
+		if ('' == $this->_result) {
+			$this->notify();
+			$this->_result = \implode('', $this->_chain);
+			
+			if (!empty($this->_global)) {
+				$this->_result = \str_replace(
+					\array_keys($this->_global),
+					$this->_global,
+					$this->_result
+				);
+			}
+		}
+	}
+}
+
+trait Insertion {
+	final public function __set(string $name, int|float|string $value): void {
+		if (isset($this->_chain[$name])) {
+			$this->_chain[$name] = $value;
+		}
+	}
+}
+
+trait InsertionMap {
+	final public function __set(string $name, int|float|string|array $value): void {
+		if (\is_array($value)) {
+			foreach ($value as $key => $val) {
+				$this->__set($name.Component::NS.$key, $val);
+			}
+		}
+		elseif (isset($this->_chain[$name])) {
+			$this->_chain[$name] = $value;
+		}
+	}
+}
+
+trait RawResult {
+	final public function getRawResult(): string {
+		return $this->_result;
+	}
+
+	final public function insert(string $text): void {
+		$this->_result.= $text;
+	}
+}
+
+trait Result {
+	use RawResult;
+
+	final public function getResult(): string {
+		return $this->_result;
+	}
+}
+
+trait WrappedResult {
+	use RawResult;
+
+	final public function getResult(): string {
+		if ('' != $this->_result) {
+			return $this->_before.$this->_result.$this->_after;
+		}
+
 		return '';
 	}
+}
+
+trait DependentRawResult {
+	final public function getRawResult(): string {
+		if ($this->_exert) {
+			$this->_exert = false;
+
+			if ($this instanceof Composite) {
+				$this->notify();
+			}
+
+			$this->_result = \implode('', $this->_chain);
+		}
+
+		return $this->_result;
+	}
+
+	final public function insert(string $text): void {
+		$this->_result = $text;
+		$this->_exert = false;
+	}
+}
+
+trait DependentResult {
+	use DependentRawResult;
+
+	final public function getResult(): string {
+		if ($result = $this->getRawResult()) {
+			$this->_result = '';
+			return $result;
+		}
+
+		return '';
+	}
+}
+
+trait WrappedDependentResult {
+	use DependentRawResult;
+
+	final public function getResult(): string {
+		if ($result = $this->getRawResult()) {
+			$this->_result = '';
+			return $this->_before.$result.$this->_after;
+		}
+
+		return '';
+	}
+}
+
+final class ActiveComposite extends Performer {
+	use Insertion;
+	use ReadyComponent;
+	use UnwrappedComponent;
+	use Result;
+}
+
+final class ActiveCompositeMap extends Performer {
+	use InsertionMap;
+	use ReadyComponent;
+	use UnwrappedComponent;
+	use Result;
+}
+
+final class FixedComposite extends DependentPerformer {
+	use Insertion;
+	use UnwrappedComponent;
+	use DependentResult;
+}
+
+final class FixedCompositeMap extends DependentPerformer {
+	use InsertionMap;
+	use UnwrappedComponent;
+	use DependentResult;
+}
+
+final class Document extends Performer {
+	use RootComponent;
+	use IndependentComponent;
+
+	final public function force(string $name, string $text): bool {
+		if (!isset($this->_component[$name])) {
+			return false;
+		}
+
+		$this->_component[$name]->insert($text);
+		return true;
+	}
+}
+
+final class WrappedActiveComposite extends Performer {
+	use WrappedComponent;
+	use ReadyComponent;
+	use Insertion;
+	use WrappedResult;
+}
+
+final class WrappedActiveCompositeMap extends Performer {
+	use WrappedComponent;
+	use ReadyComponent;
+	use InsertionMap;
+	use WrappedResult;
+}
+
+final class WrappedFixedComposite extends DependentPerformer {
+	use WrappedComponent;
+	use Insertion;
+	use WrappedDependentResult;
+}
+
+final class WrappedFixedCompositeMap extends DependentPerformer {
+	use WrappedComponent;
+	use InsertionMap;
+	use WrappedDependentResult;
+}
+
+final class ActiveLeaf extends Leaf {
+	use Insertion;
+	use UnwrappedComponent;
+	use ReadyComponent;
+	use Result;
+}
+
+final class ActiveLeafMap extends Leaf {
+	use InsertionMap;
+	use UnwrappedComponent;
+	use ReadyComponent;
+	use Result;
+}
+
+final class FixedLeaf extends DependentLeaf {
+	use Insertion;
+	use UnwrappedComponent;
+	use DependentResult;
+}
+
+final class FixedLeafMap extends DependentLeaf {
+	use InsertionMap;
+	use UnwrappedComponent;
+	use DependentResult;
+}
+
+final class Text extends Leaf {
+	use RootComponent;
+	use IndependentComponent;
+}
+
+final class WrappedActiveLeaf extends Leaf {
+	use WrappedComponent;
+	use ReadyComponent;
+	use Insertion;
+	use WrappedResult;
+}
+
+final class WrappedActiveLeafMap extends Leaf {
+	use WrappedComponent;
+	use ReadyComponent;
+	use InsertionMap;
+	use WrappedResult;
+}
+
+final class WrappedFixedLeaf extends DependentLeaf {
+	use WrappedComponent;
+	use Insertion;
+	use WrappedDependentResult;
+}
+
+final class WrappedFixedLeafMap extends DependentLeaf {
+	use WrappedComponent;
+	use InsertionMap;
+	use WrappedDependentResult;
+}
+
+final class Variator extends Variant {
+	use UnwrappedComponent;
+	use ReadyVariant;
+	use Result;
+}
+
+final class WrappedVariator extends Variant {
+	use WrappedComponent;
+	use ReadyVariant;
+	use WrappedResult;
+}
+
+final class Emulator extends Component {
+	public function attach(Component $c): void {}
+	public function drop(): void {}
+	public function isComponent(string $name): bool {return false;}
+	public function getChild(string $class): Component {return $this;}
+	public function getChildName(string $class): string|null {return null;}
+	public function getChildNames(string $class): array {return [];}
+	public function __call(string $name, array $value): bool {return false;}
+	public function __get(string $name): Component {return $this;}
+	public function __isset(string $name): bool {return false;}
+	public function __unset(string $name): void {}
+	public function __set(string $name, string|int|float $value): void {}
+	public function getResult(): string {return '';}
+	public function getRawResult(): string {return '';}
+	public function isReady(): bool {return true;}
+	public function insert(string $text): void {}
+	public function unwrap(): void {}
+	public function common(string $name, array|string|int|float $value): void {}
+	public function ready(): void {}
+	protected function notify(): void {}
+	public function __toString(): string {return '';}
+	public function add(string $name, int|float|string $value=''): void {}
+	public function force(string $name, string $text): bool {return true;}
 }

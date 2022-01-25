@@ -23,7 +23,7 @@ namespace dl\tt;
 
 final class Config extends \dl\Setter {
 	protected function initialize(): void	{
-		$this->_property['root']          = __NAMESPACE__.'\Document';
+		$this->_property['root']          = __NAMESPACE__.'\\Document';
 
 		$this->_property['auto_class']    = true;
 
