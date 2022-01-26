@@ -52,6 +52,8 @@ final class Config extends \dl\Setter {
 		$this->_property['wrap']          = 'WRAP';
 		$this->_property['wrap_tag']      = 'div';
 		$this->_property['wrap_class']    = 'wrap';
+		$this->_property['wrap_open']     = '[';
+		$this->_property['wrap_close']    = ']';
 
 		$this->_property['keep_spaces']   = false;
 	}
