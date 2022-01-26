@@ -8,6 +8,10 @@
 
     ------------------------------------------------------------------------
 
+	namespace dl\tt
+
+	interface Wrapped
+
     abstract class Component          implements \dl\DirectCallable
 
 	abstract class Composite          extends Component
@@ -23,8 +27,7 @@
 	trait ReadyComponent         use IndependentComponent
 	trait ReadyVariant           use IndependentComponent
 	trait WrappedComponent
-	trait UnwrappedComponent
-	trait RootComponent          use UnwrappedComponent
+	trait RootComponent
 	trait Insertion
 	trait InsertionMap
 	trait RawResult
@@ -34,25 +37,25 @@
 	trait DependentResult        use DependentRawResult
 	trait WrappedDependentResult use DependentRawResult
 
-	final class ActiveComposite           extends Performer          use Insertion, ReadyComponent, UnwrappedComponent, Result
-	final class ActiveCompositeMap        extends Performer          use InsertionMap, ReadyComponent, UnwrappedComponent, Result
-	final class FixedComposite            extends DependentPerformer use Insertion, UnwrappedComponent, DependentResult
-	final class FixedCompositeMap         extends DependentPerformer use InsertionMap, UnwrappedComponent, DependentResult
+	final class ActiveComposite           extends Performer          use Insertion, ReadyComponent, Result
+	final class ActiveCompositeMap        extends Performer          use InsertionMap, ReadyComponent, Result
+	final class FixedComposite            extends DependentPerformer use Insertion, DependentResult
+	final class FixedCompositeMap         extends DependentPerformer use InsertionMap, DependentResult
 	final class Document                  extends Performer          use RootComponent, IndependentComponent
 	final class WrappedActiveComposite    extends Performer          use WrappedComponent, ReadyComponent, Insertion, WrappedResult
 	final class WrappedActiveCompositeMap extends Performer          use WrappedComponent, ReadyComponent, InsertionMap, WrappedResult
 	final class WrappedFixedComposite     extends DependentPerformer use WrappedComponent, Insertion, WrappedDependentResult
 	final class WrappedFixedCompositeMap  extends DependentPerformer use WrappedComponent, InsertionMap, WrappedDependentResult
-	final class ActiveLeaf                extends Leaf               use Insertion, UnwrappedComponent, ReadyComponent, Result
-	final class ActiveLeafMap             extends Leaf               use InsertionMap, UnwrappedComponent, ReadyComponent Result
-	final class FixedLeaf                 extends DependentLeaf      use Insertion, UnwrappedComponent, DependentResult
-	final class FixedLeafMap              extends DependentLeaf      use InsertionMap, UnwrappedComponent, DependentResult
+	final class ActiveLeaf                extends Leaf               use Insertion, ReadyComponent, Result
+	final class ActiveLeafMap             extends Leaf               use InsertionMap, ReadyComponent Result
+	final class FixedLeaf                 extends DependentLeaf      use Insertion, DependentResult
+	final class FixedLeafMap              extends DependentLeaf      use InsertionMap, DependentResult
 	final class Text                      extends Leaf               use RootComponent, IndependentComponent
 	final class WrappedActiveLeaf         extends Leaf               use WrappedComponent, ReadyComponent, Insertion, WrappedResult
 	final class WrappedActiveLeafMap      extends Leaf               use WrappedComponent, ReadyComponent, InsertionMap, WrappedResult
 	final class WrappedFixedLeaf          extends DependentLeaf      use WrappedComponent, Insertion, WrappedDependentResult
 	final class WrappedFixedLeafMap       extends DependentLeaf      use WrappedComponent, InsertionMap, WrappedDependentResult
-	final class Variator                  extends Variant            use UnwrappedComponent, ReadyVariant, Result
+	final class Variator                  extends Variant            use ReadyVariant, Result
 	final class WrappedVariator           extends Variant            use WrappedComponent, ReadyVariant, WrappedResult
 	final class Emulator                  extends Component
 
@@ -63,6 +66,10 @@
 \******************************************************************************/
 declare(strict_types=1);
 namespace dl\tt;
+
+interface Wrapped {
+	public function unwrap(): void;
+}
 
 abstract class Component implements \dl\DirectCallable {
 	final public const NS = '.';
@@ -82,7 +89,6 @@ abstract class Component implements \dl\DirectCallable {
 	abstract public function getRawResult(): string;
 	abstract public function isReady(): bool;
 	abstract public function insert(string $text): void;
-	abstract public function unwrap(): void;
 	abstract public function common(string $name, string|int|float $value): void;
 	abstract public function ready(): void;
 	abstract protected function notify(): void;
@@ -115,9 +121,9 @@ abstract class Component implements \dl\DirectCallable {
 
 	final public static function emulate(): Emulator {
 		return new Emulator([
-			'_class'   => 'Emulator',
-			'_name'    => 'Emulator',
-			'_result'  => '',
+			'_class'  => 'Emulator',
+			'_name'   => 'Emulator',
+			'_result' => '',
 		]);
 	}
 
@@ -280,18 +286,22 @@ abstract class Variant extends Composite {
 }
 
 trait Sequence {
-    protected array $_var;
+    //protected array $_var;
 	protected array $_ref;
 	protected array $_chain;
 
 	public function __construct(array $state) {
 		parent::__construct($state);
-        $this->_var   = $state['_var'];
+        //$this->_var   = $state['_var'];
         $this->_ref   = $state['_ref'];
         $this->_chain = $state['_chain'];
-
+/*
 		foreach ($this->_ref as $i => $name) {
 			$this->_chain[$i] =&$this->_var[$name];
+		}
+*/
+		foreach ($this->_ref as $k => $v) {
+			$this->_chain[$k] =&$this->_chain[$v];
 		}
 	}
 }
@@ -461,13 +471,7 @@ trait WrappedComponent {
 	}
 }
 
-trait UnwrappedComponent {
-	final public function unwrap(): void {}
-}
-
 trait RootComponent {
-	use UnwrappedComponent;
-
 	protected array  $_global;
 	protected string $_first;
 	protected string $_last;
@@ -632,26 +636,22 @@ trait WrappedDependentResult {
 final class ActiveComposite extends Performer {
 	use Insertion;
 	use ReadyComponent;
-	use UnwrappedComponent;
 	use Result;
 }
 
 final class ActiveCompositeMap extends Performer {
 	use InsertionMap;
 	use ReadyComponent;
-	use UnwrappedComponent;
 	use Result;
 }
 
 final class FixedComposite extends DependentPerformer {
 	use Insertion;
-	use UnwrappedComponent;
 	use DependentResult;
 }
 
 final class FixedCompositeMap extends DependentPerformer {
 	use InsertionMap;
-	use UnwrappedComponent;
 	use DependentResult;
 }
 
@@ -669,27 +669,27 @@ final class Document extends Performer {
 	}
 }
 
-final class WrappedActiveComposite extends Performer {
+final class WrappedActiveComposite extends Performer implements Wrapped {
 	use WrappedComponent;
 	use ReadyComponent;
 	use Insertion;
 	use WrappedResult;
 }
 
-final class WrappedActiveCompositeMap extends Performer {
+final class WrappedActiveCompositeMap extends Performer implements Wrapped {
 	use WrappedComponent;
 	use ReadyComponent;
 	use InsertionMap;
 	use WrappedResult;
 }
 
-final class WrappedFixedComposite extends DependentPerformer {
+final class WrappedFixedComposite extends DependentPerformer implements Wrapped {
 	use WrappedComponent;
 	use Insertion;
 	use WrappedDependentResult;
 }
 
-final class WrappedFixedCompositeMap extends DependentPerformer {
+final class WrappedFixedCompositeMap extends DependentPerformer implements Wrapped {
 	use WrappedComponent;
 	use InsertionMap;
 	use WrappedDependentResult;
@@ -697,27 +697,23 @@ final class WrappedFixedCompositeMap extends DependentPerformer {
 
 final class ActiveLeaf extends Leaf {
 	use Insertion;
-	use UnwrappedComponent;
 	use ReadyComponent;
 	use Result;
 }
 
 final class ActiveLeafMap extends Leaf {
 	use InsertionMap;
-	use UnwrappedComponent;
 	use ReadyComponent;
 	use Result;
 }
 
 final class FixedLeaf extends DependentLeaf {
 	use Insertion;
-	use UnwrappedComponent;
 	use DependentResult;
 }
 
 final class FixedLeafMap extends DependentLeaf {
 	use InsertionMap;
-	use UnwrappedComponent;
 	use DependentResult;
 }
 
@@ -726,45 +722,44 @@ final class Text extends Leaf {
 	use IndependentComponent;
 }
 
-final class WrappedActiveLeaf extends Leaf {
+final class WrappedActiveLeaf extends Leaf implements Wrapped {
 	use WrappedComponent;
 	use ReadyComponent;
 	use Insertion;
 	use WrappedResult;
 }
 
-final class WrappedActiveLeafMap extends Leaf {
+final class WrappedActiveLeafMap extends Leaf implements Wrapped {
 	use WrappedComponent;
 	use ReadyComponent;
 	use InsertionMap;
 	use WrappedResult;
 }
 
-final class WrappedFixedLeaf extends DependentLeaf {
+final class WrappedFixedLeaf extends DependentLeaf implements Wrapped {
 	use WrappedComponent;
 	use Insertion;
 	use WrappedDependentResult;
 }
 
-final class WrappedFixedLeafMap extends DependentLeaf {
+final class WrappedFixedLeafMap extends DependentLeaf implements Wrapped {
 	use WrappedComponent;
 	use InsertionMap;
 	use WrappedDependentResult;
 }
 
 final class Variator extends Variant {
-	use UnwrappedComponent;
 	use ReadyVariant;
 	use Result;
 }
 
-final class WrappedVariator extends Variant {
+final class WrappedVariator extends Variant implements Wrapped {
 	use WrappedComponent;
 	use ReadyVariant;
 	use WrappedResult;
 }
 
-final class Emulator extends Component {
+final class Emulator extends Component implements Wrapped {
 	public function attach(Component $c): void {}
 	public function drop(): void {}
 	public function isComponent(string $name): bool {return false;}
