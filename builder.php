@@ -55,7 +55,7 @@ final class Builder {
 		return $this->block[0];
 	}
 
-	private function __construct() {
+	public function __construct() {
 		$cfg = Config::get();
 
 		$this->component = [
@@ -81,6 +81,9 @@ final class Builder {
 			'document'    => __NAMESPACE__.'\\Document',
 		];
 
+		$open  = \preg_quote($cfg->wrap_open, '/');
+		$close = \preg_quote($cfg->wrap_close, '/');
+
 		$this->pattern = [
 			'variable' => '/'.
 				\preg_quote($cfg->var_begin, '/').
@@ -96,7 +99,12 @@ final class Builder {
 
 			'block' => '/'.
 				'<!--\s+('.\preg_quote($cfg->driver, '/').'|'.\preg_quote($cfg->variant, '/').'|)'.
-					'([A-Za-z]\w*)(<>|<([a-z1-6]+)>|<([a-z1-6]+)\s+[^>]+>|)(?:\s*\:\s*([A-Za-z_]\w*))?'.
+					'([A-Za-z]\w*)'.
+					'('.$open.$close.
+					'|'.$open.'([a-z1-6]+)'.$close.
+					'|'.$open.'([a-z1-6]+)\s+[^'.$close.']+'.$close.
+					'|)'.
+					'(?:\s*\:\s*([A-Za-z_]\w*))?'.
 				'\s+-->(.+)<!--\s+'.\preg_quote($cfg->block_end, '/').'\\2\s+-->'.
 			'/Us',
 		];
@@ -123,10 +131,12 @@ final class Builder {
 		$begin = $cfg->global_begin;
 		$end   = $cfg->global_end;
 
-		foreach ($matches as $key => $match) {
+		foreach ($matches as $match) {
 			if (isset($match[4])) {
 				$match[3] = $match[4];
 			}
+
+			$match[1] = $begin.$match[1].$end;
 
 			if (!isset($this->globs[$match[1]])) {
 				$this->globs[$match[1]] = $match[3]??'';
@@ -135,10 +145,10 @@ final class Builder {
 				$this->globs[$match[1]] = $match[3];
 			}
 
-			if ($match[0] != $begin.$match[1].$end) {
+			if ($match[0] != $match[1]) {
 				$this->block[0] = \str_replace(
 					$match[0],
-					$begin.$match[1].$end,
+					$match[1],
 					$this->block[0]
 				);
 			}
@@ -146,12 +156,13 @@ final class Builder {
 	}
 
 	private function prepareDependencies(): void {
-		$cfg = Config::get();
-		$trim = !$cfg->keep_spaces;
+		$cfg     = Config::get();
+		$trim    = !$cfg->keep_spaces;
 		$variant = $cfg->variant;
-		$driver = $cfg->driver;
-		$tag    = $cfg->wrap_tag;
-		$class  = $cfg->wrap_class;
+		$driver  = $cfg->driver;
+		$tag     = $cfg->wrap_tag;
+		$class   = $cfg->wrap_class;
+		$woc     = $cfg->wrap_open.$cfg->wrap_close;
 
 		$k = 1;
 
@@ -160,7 +171,7 @@ final class Builder {
 				continue;
 			}
 
-			foreach ($matches as $key => $match) {
+			foreach ($matches as $match) {
 				if ($trim) {
 					$this->block[$k] = \rtrim($match[7]);
 				}
@@ -174,7 +185,7 @@ final class Builder {
 					$this->before[$k] = '';
 					$this->after[$k] = '';
 				}
-				elseif ('<>' == $match[3]) {
+				elseif ($woc == $match[3]) {
 					$this->before[$k] = '<'.$tag.' class="'.$class.'">';
 					$this->after[$k] = '</'.$tag.'>';
 				}
@@ -283,7 +294,7 @@ final class Builder {
 	}
 
 	private function identifyType(int $id, string $leaf): void {
-		if (isset($this->child[$id][0])) {
+		if (!isset($this->child[$id][0])) {
 			$this->types[$id] = $this->component[$leaf];
 		}
 
@@ -334,7 +345,7 @@ final class Builder {
 					'_class'     => $this->id[$i],
 					'_name'      => $this->names[$i],
 					'_component' => [],
-					'_result'    => ''
+					'_result'    => '',
 				]);
 				break;
 
@@ -349,7 +360,7 @@ final class Builder {
 					'_before'    => $this->before[$i],
 					'_after'     => $this->after[$i],
 					'_component' => [],
-					'_result'    => ''
+					'_result'    => '',
 				]);
 				break;
 
@@ -363,7 +374,7 @@ final class Builder {
 					'_name'      => $this->names[$i],
 					'_component' => [],
 					'_exert'     => false,
-					'_result'    => ''
+					'_result'    => '',
 				]);
 				break;
 
@@ -379,7 +390,7 @@ final class Builder {
 					'_after'     => $this->after[$i],
 					'_component' => [],
 					'_exert'     => false,
-					'_result'    => ''
+					'_result'    => '',
 				]);
 				break;
 
@@ -391,7 +402,7 @@ final class Builder {
 					'_ref'    => $this->ref[$i],
 					'_class'  => $this->id[$i],
 					'_name'   => $this->names[$i],
-					'_result' => ''
+					'_result' => '',
 				]);
 				break;
 
@@ -405,7 +416,7 @@ final class Builder {
 					'_name'   => $this->names[$i],
 					'_before' => $this->before[$i],
 					'_after'  => $this->after[$i],
-					'_result' => ''
+					'_result' => '',
 				]);
 				break;
 
@@ -418,7 +429,7 @@ final class Builder {
 					'_class'  => $this->id[$i],
 					'_name'   => $this->names[$i],
 					'_exert'  => false,
-					'_result' => ''
+					'_result' => '',
 				]);
 				break;
 
@@ -433,7 +444,7 @@ final class Builder {
 					'_before' => $this->before[$i],
 					'_after'  => $this->after[$i],
 					'_exert'  => false,
-					'_result' => ''
+					'_result' => '',
 				]);
 				break;
 
@@ -444,7 +455,7 @@ final class Builder {
 						'_name'      => $this->names[$i],
 						'_component' => [],
 						'_variant'   => $this->names[$this->child[$i][0]],
-						'_result'    => ''
+						'_result'    => '',
 					]);
 				}
 				else {
@@ -462,7 +473,7 @@ final class Builder {
 						'_after'     => $this->after[$i],
 						'_component' => [],
 						'_variant'   => $this->names[$this->child[$i][0]],
-						'_result'    => ''
+						'_result'    => '',
 					]);
 				}
 				else {
@@ -481,7 +492,7 @@ final class Builder {
 					'_global'    => $this->globs,
 					'_first'     => $cfg->global_begin,
 					'_last'      => $cfg->global_end,
-					'_result'    => ''
+					'_result'    => '',
 				]);
 
 				break;
@@ -495,21 +506,16 @@ final class Builder {
 					'_global'    => $this->globs,
 					'_first'     => $cfg->global_begin,
 					'_last'      => $cfg->global_end,
-					'_result'    => ''
+					'_result'    => '',
 				]);
 
 				break;
 
 			default:
 				$this->block[$i] = new Emulator([
-					'_stack'   => [],
-					'_refer'   => [],
-					'_child'   => [],
-					'_csid'    => 'EMULATOR',
-					'_name'    => 'EMULATOR',
-					'_open'    => '',
-					'_close'   => '',
-					'_result'  => ''
+					'_class'  => 'Emulator',
+					'_name'   => 'Emulator',
+					'_result' => '',
 				]);
 			}
 		}
