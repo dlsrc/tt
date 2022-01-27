@@ -100,13 +100,12 @@ final class Builder {
 			'block' => '/'.
 				'<!--\s+('.\preg_quote($cfg->driver, '/').'|'.\preg_quote($cfg->variant, '/').'|)'.
 					'([A-Za-z]\w*)'.
-					'('.$open.$close.
-					'|'.$open.'([a-z1-6]+)'.$close.
-					'|'.$open.'([a-z1-6]+)\s+[^'.$close.']+'.$close.
-					'|)'.
+					'('.$open.'\s*'.$close.'|'.$open.'([^'.$close.']+)'.$close.'|)'.
 					'(?:\s*\:\s*([A-Za-z_]\w*))?'.
 				'\s+-->(.+)<!--\s+'.\preg_quote($cfg->block_end, '/').'\\2\s+-->'.
 			'/Us',
+
+			'wrap' => '/^([A-Za-z0-9]+)(\=\"|\s+|)/',
 		];
 
 		$this->block  = [];
@@ -173,36 +172,48 @@ final class Builder {
 
 			foreach ($matches as $match) {
 				if ($trim) {
-					$this->block[$k] = \rtrim($match[7]);
+					$this->block[$k] = \rtrim($match[6]);
 				}
 				else {
-					$this->block[$k] = $match[7];
+					$this->block[$k] = $match[6];
 				}
 
 				$this->names[$k] = $match[2];
 
-				if ('' == $match[3]) {
+				if (isset($match[4]) && '' != $match[4]) {
+    				$match[4] = \trim($match[4]);
+
+				    if (0 == \preg_match($this->pattern['wrap'], $match[4], $m)) {
+						$this->before[$k] = '<'.$tag.' class="'.$class.'">';
+						$this->after[$k]  = '</'.$tag.'>';
+    				}
+    				elseif ('="' == $m[2]) {
+        				$this->before[$k] = '<'.$tag.' '.$match[4].'>';
+        				$this->after[$k]  = '</'.$tag.'>';
+    				}
+    				elseif ('' == $m[2]) {
+        				$this->before[$k] = '<'.$m[1].' class="'.$class.'">';
+        				$this->after[$k]  = '</'.$m[1].'>';
+    				}
+    				else {
+        				$this->before[$k] = '<'.$match[4].'>';
+        				$this->after[$k]  = '</'.$m[1].'>';
+    				}
+				}
+				elseif ('' == $match[3]) {
 					$this->before[$k] = '';
-					$this->after[$k] = '';
-				}
-				elseif ($woc == $match[3]) {
-					$this->before[$k] = '<'.$tag.' class="'.$class.'">';
-					$this->after[$k] = '</'.$tag.'>';
-				}
-				elseif ('' == $match[4]) {
-					$this->before[$k] = $match[3];
-					$this->after[$k] = '</'.$match[5].'>';
+					$this->after[$k]  = '';
 				}
 				else {
-					$this->before[$k] = '<'.$match[4].' class="'.$class.'">';
-					$this->after[$k] = '</'.$match[4].'>';
+					$this->before[$k] = '<'.$tag.' class="'.$class.'">';
+					$this->after[$k]  = '</'.$tag.'>';
 				}
 
-				if ('' == $match[6]) {
+				if ('' == $match[5]) {
 					$this->id[$k] = $match[2];
 				}
 				else {
-					$this->id[$k] = $match[6];
+					$this->id[$k] = $match[5];
 				}
 				
 				if ('' == $this->before[$k]) {
