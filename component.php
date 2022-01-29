@@ -1,5 +1,5 @@
 <?php
-/*******************************************************************************\
+/******************************************************************************\
     ______  _                                    ____ _____  _  ____  ______
     | ___ \| |                                  / _  | ___ \| |/ __ \/ ____/
     | |  \ \ |          Dmitry Lebedev         / /_| | |  \ \ | /  \ \____ \
@@ -15,7 +15,7 @@
     abstract class Component          implements \dl\DirectCallable
 
 	abstract class Composite          extends Component
-	abstract class Variant            extends Component
+	abstract class Variant            extends Composite
 	abstract class Leaf               extends Component use Sequence
 	abstract class Performer          extends Composite use Sequence
 	abstract class DependentLeaf      extends Performer use DependentComponent
@@ -127,14 +127,12 @@ abstract class Component implements \dl\DirectCallable {
 		]);
 	}
 
-	final protected static function error(string $info, Code $code): void {
-		if (!Mode::Product->current()) {
-			if (Mode::Develop->current()) {
-				throw new Failure(\dl\Error::log(Info::message($info), $code));
-			}
-			else {
-				\dl\Error::log(Info::message($info), $code);
-			}
+	final public static function error(string $message, Code $code, bool $pro=false): void {
+		if (Mode::Develop->current()) {
+			throw new Failure(\dl\Error::log($message, $code));
+		}
+		elseif (Mode::Rebuild->current() || $pro) {
+			\dl\Error::log($message, $code);
 		}
 	}
 }
@@ -200,6 +198,7 @@ abstract class Composite extends Component {
 			}
 		}
 
+		Component::error(Info::message('e_no_class', $class), Code::Type);
 		return Component::emulate();
 	}
 
@@ -266,7 +265,7 @@ abstract class Variant extends Composite {
 			return $this->_component[$name];
 		}
 
-		Component::error('e_no_child', Code::Component);
+		Component::error(Info::message('e_no_child', $name), Code::Component);
 		return Component::emulate();
 	}
 
@@ -314,7 +313,7 @@ abstract class Leaf extends Component {
 	}
 
 	final public function __get(string $name): Component {
-		Component::error('e_no_child', Code::Component);
+		Component::error(Info::message('e_no_child', $name), Code::Component);
 		return Component::emulate();
 	}
 
@@ -335,6 +334,7 @@ abstract class Leaf extends Component {
 	}
 
 	final public function getChild(string $class): Component {
+		Component::error(Info::message('e_no_class', $class), Code::Type);
 		return Component::emulate();
 	}
 
@@ -379,7 +379,7 @@ abstract class Performer extends Composite {
 			return $this->_component[$name];
 		}
 
-		Component::error('e_no_child', Code::Component);
+		Component::error(Info::message('e_no_child', $name), Code::Component);
 		return Component::emulate();
 	}
 

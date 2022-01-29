@@ -8,7 +8,7 @@
 
     ------------------------------------------------------------------------
 
-    class dl\tt\Info
+    class dl\tt\Snippet
 
     ------------------------------------------------------------------------
 
@@ -18,23 +18,32 @@
 declare(strict_types=1);
 namespace dl\tt;
 
-final class Info implements \dl\Sociable {
-	use \dl\Informer;
-	final public const VERSION  = '1.0.0-lite-dev1';
-
-	public static function build(string $template, string|null $markup=null): string {
-		if ($markup && 'ROOT' != $markup) {
-			return \substr($template, 0, \strrpos($template, '.')).
-			'-'.$markup.'-'.self::VERSION.'.php';
+trait Develop {
+	private static function develop(string $template): string {
+		if (!\is_readable($template)) {
+			Component::error(Info::message('e_no_tpl', $template), Code::Make, true);
+            return '';
 		}
 
-		return \substr($template, 0, \strrpos($template, '.')).
-			'-'.self::VERSION.'.php';
+		if (!$c = Collector::make($template)) {
+			Component::error(Info::message('e_collect', $template), Code::Make, true);
+			return '';
+		}
+
+		$tpl = $c->collect();
+		\dl\IO::fw(Info::collect($template), $tpl);
+		return $tpl;
 	}
 
-	public static function collect(string $template): string {
-		return \substr($template, 0, \strrpos($template, '.')).
-			'-'.self::VERSION.
-			\substr($template, \strrpos($template, '.'));
+	private static function build(string $template): string {
+		$tpl = Info::collect($template);
+
+		if (\is_readable($tpl)) {
+			return include $tpl;
+		}
+
+		return self::develop($template);
 	}
+
+	private function __construct() {}
 }
