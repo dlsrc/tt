@@ -39,11 +39,12 @@ final class Page {
 				}
 
 				if (!$tpl) {
-					// Ошибку регистрирует метод Page::develop (см. trait Develop)
+					// Ошибку регистрируют методы
+					// Page::build и Page::develop (см. trait Develop)
 					return Component::emulate();
 				}
 
-				self::$_page = (new Build())->build($tpl);
+				self::$_page = (new Builder())->build($tpl);
 				(new \dl\Exporter($page))->save(self::$_page);
 			}
 		}

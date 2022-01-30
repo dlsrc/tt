@@ -492,8 +492,8 @@ trait RootComponent {
 		elseif (isset($this->_global[$this->_first.$name.$this->_last])) {
 			$this->_global[$this->_first.$name.$this->_last] = $value;
 		}
-		else {
-			parent::__set($name, $value);
+		elseif (isset($this->_chain[$name])) {
+			$this->_chain[$name] = $value;
 		}
 	}
 

@@ -36,10 +36,15 @@ trait Develop {
 	}
 
 	private static function build(string $template): string {
-		$tpl = Info::collect($template);
+		$file = Info::collect($template);
 
-		if (\is_readable($tpl)) {
-			return include $tpl;
+		if (\is_readable($file)) {
+			if (!$tpl = \file_get_contents($file)) {
+				Component::error(Info::message('e_get_file', $file), Code::Content, true);
+				return '';
+			}
+
+			return $tpl;
 		}
 
 		return self::develop($template);

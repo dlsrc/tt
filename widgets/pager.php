@@ -19,8 +19,8 @@ declare(strict_types=1);
 namespace dl\tt;
 
 abstract class Pager {
-	abstract public function draw(\dl\markup\Composite $pager, int $total, int $list): void;
-	abstract public function drawMax(\dl\markup\Composite $pager, int $total, int $list): void;
+	abstract public function draw(Component $pager, int $total, int $list): void;
+	abstract public function drawMax(Component $pager, int $total, int $list): void;
 
 	protected string $name;
 	protected int $page;

@@ -26,5 +26,6 @@ final class Info extends \dl\Getter {
         $this->_property['e_no_class']   = 'Дочерний компонент с типом "{0}" не существует.';
 		$this->_property['e_collect']    = 'В результате компиляции шаблона "{0}" сборщик вернул пустую строку.';
 		$this->_property['e_no_snippet'] = 'Сниппет "{0}" не обнаружен.';
+		$this->_property['e_get_file']   = 'Не удалось получить содержимое файла шаблона "{0}".';
 	}
 }

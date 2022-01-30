@@ -120,7 +120,7 @@ final class Snippet {
 
 				$cfg = Config::get();
 				$cfg->root = __NAMESPACE__.'\\ActiveComposite';
-				$component = (new Build())->build($tpl);
+				$component = (new Builder())->build($tpl);
 
 				if ('ROOT' != $markup) {
 					$type = \explode('.', $markup);

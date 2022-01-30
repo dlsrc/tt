@@ -19,7 +19,7 @@ declare(strict_types=1);
 namespace dl\tt;
 
 abstract class Sorter {
-	abstract public function draw(\dl\markup\Composite $head): void;
+	abstract public function draw(Component $head): void;
 
 	protected string $sort;
 	protected string $order;
