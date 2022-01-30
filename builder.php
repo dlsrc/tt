@@ -27,6 +27,7 @@ final class Builder {
 	private array $types;
 	private array $stack;
 	private array $ref;
+	private array $var;
 	private array $child;
 	private int   $size;
 	private array $globs;
@@ -114,6 +115,7 @@ final class Builder {
 		$this->types  = [];
 		$this->stack  = [];
 		$this->ref    = [];
+		$this->var    = [];
 		$this->child  = [];
 		$this->globs  = [];
 		$this->before = [];
@@ -269,7 +271,7 @@ final class Builder {
 			$split = \preg_split($this->pattern['variable'], $this->block[$i]);
 
 			foreach ($matches as $id => $match) {
-				if ('' != $split[$id]) {
+				if ('' != \trim($split[$id])) {
 					$this->stack[$i][$key] = $split[$id];
 					$key++;
 				}
@@ -298,7 +300,7 @@ final class Builder {
 
 			$id++;
 
-			if ('' != $split[$id]) {
+			if ('' != \trim($split[$id])) {
 				$this->stack[$i][$key] = $split[$id];
 			}
 		}
