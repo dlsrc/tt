@@ -227,7 +227,7 @@ abstract class Composite extends Component {
 	final protected function notify(): void {
 		foreach ($this->_component as $component) {
 			$name = Component::NS.$component->getName();
-			$this->_chain[$name] = $component->getResult();
+			$this->_var[$name] = $component->getResult();
 			$component->update();
 		}
 	}
@@ -285,22 +285,18 @@ abstract class Variant extends Composite {
 }
 
 trait Sequence {
-    //protected array $_var;
+    protected array $_var;
 	protected array $_ref;
 	protected array $_chain;
 
 	public function __construct(array $state) {
 		parent::__construct($state);
-        //$this->_var   = $state['_var'];
+        $this->_var   = $state['_var'];
         $this->_ref   = $state['_ref'];
         $this->_chain = $state['_chain'];
-/*
+
 		foreach ($this->_ref as $i => $name) {
 			$this->_chain[$i] =&$this->_var[$name];
-		}
-*/
-		foreach ($this->_ref as $k => $v) {
-			$this->_chain[$k] =&$this->_chain[$v];
 		}
 	}
 }
@@ -347,9 +343,7 @@ abstract class Leaf extends Component {
 	}
 
 	final public function common(string $name, int|float|string $value): void {
-		if (isset($this->_chain[$name])) {
-			$this->_chain[$name] = $value;
-		}
+		$this->_var[$name] = $value;
 	}
 
 	final protected function notify(): void {}
@@ -385,15 +379,13 @@ abstract class Performer extends Composite {
 
 	final public function __unset(string $name): void {
 		if (isset($this->_component[$name])) {
-			$this->_chain[Component::NS.$name] = $this->_component[$name]->getResult();
+			$this->_var[Component::NS.$name] = $this->_component[$name]->getResult();
 			unset($this->_component[$name]);
 		}
 	}
 
 	final public function common(string $name, int|float|string $value): void {
-		if (isset($this->_chain[$name])) {
-			$this->_chain[$name] = $value;
-		}
+		$this->_var[$name] = $value;
 
 		foreach ($this->_component as $component) {
 			$component->common($name, $value);
@@ -489,16 +481,12 @@ trait RootComponent {
 				$this->__set($name.Component::NS.$key, $val);
 			}
 		}
-		elseif (isset($this->_global[$this->_first.$name.$this->_last])) {
+		elseif (isset($this->_var[$name])) {
+			$this->_var[$name] = $value;
+		}
+		else {
 			$this->_global[$this->_first.$name.$this->_last] = $value;
 		}
-		elseif (isset($this->_chain[$name])) {
-			$this->_chain[$name] = $value;
-		}
-	}
-
-	final public function add(string $name, int|float|string $value=''): void {
-		$this->_global[$this->_first.$name.$this->_last] = $value;
 	}
 
 	final public function __toString(): string {
@@ -537,9 +525,7 @@ trait RootComponent {
 
 trait Insertion {
 	final public function __set(string $name, int|float|string $value): void {
-		if (isset($this->_chain[$name])) {
-			$this->_chain[$name] = $value;
-		}
+		$this->_var[$name] = $value;
 	}
 }
 
@@ -550,8 +536,8 @@ trait InsertionMap {
 				$this->__set($name.Component::NS.$key, $val);
 			}
 		}
-		elseif (isset($this->_chain[$name])) {
-			$this->_chain[$name] = $value;
+		else {
+			$this->_var[$name] = $value;
 		}
 	}
 }
@@ -780,6 +766,5 @@ final class Emulator extends Component implements Wrapped {
 	public function ready(): void {}
 	protected function notify(): void {}
 	public function __toString(): string {return '';}
-	public function add(string $name, int|float|string $value=''): void {}
 	public function force(string $name, string $text): bool {return true;}
 }

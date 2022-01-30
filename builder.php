@@ -88,7 +88,8 @@ final class Builder {
 		$this->pattern = [
 			'variable' => '/'.
 				\preg_quote($cfg->var_begin, '/').
-				'\s*(['.\preg_quote($cfg->refns, '/').'\.A-Za-z][\.\w]*)(?:\s*\=(?-U)\s*(?U)(?:(\'|\"|\`)(.+)\\2|(.+)))?\s*'.
+				'\s*(['.\preg_quote($cfg->refns, '/').
+				'\.A-Za-z][\.\w]*)(?:\s*\=(?-U)\s*(?U)(?:(\'|\"|\`)(.+)\\2|(.+)))?\s*'.
 				\preg_quote($cfg->var_end, '/').
 			'/U',
 
@@ -262,6 +263,7 @@ final class Builder {
 		for ($i = 0; $i < $this->size; $i++) {
 			$key = 0;
 			$this->ref[$i] = [];
+			$this->var[$i] = [];
 
 			if (0 == \preg_match_all($this->pattern['variable'], $this->block[$i], $matches, \PREG_SET_ORDER)) {
 				$this->stack[$i] = [$this->block[$i]];
@@ -284,18 +286,21 @@ final class Builder {
 					$match[1] = Component::NS.\substr($match[1], 1);
 				}
 
-				if (!isset($this->stack[$i][$match[1]])) {
-					$this->stack[$i][$match[1]] = $match[3]??'';
+				if (!isset($this->var[$i][$match[1]])) {
+					$this->var[$i][$match[1]] = $match[3]??'';
+					$this->stack[$i][$key] = '';
+					$this->ref[$i][$key] = $match[1];
 				}
 				else {
-					if (isset($match[3]) && '' == $this->stack[$i][$match[1]]) {
-						$this->stack[$i][$match[1]] = $match[3];
+					if (isset($match[3]) && '' == $this->var[$i][$match[1]]) {
+						$this->var[$i][$match[1]] = $match[3];
 					}
 
-					$this->stack[$i][$key] = $this->stack[$i][$match[1]];
+					$this->stack[$i][$key] = '';
 					$this->ref[$i][$key] = $match[1];
-					$key++;
 				}
+
+				$key++;
 			}
 
 			$id++;
@@ -354,6 +359,7 @@ final class Builder {
 
 				$this->block[$i] = new $this->types[$i]([
 					'_chain'     => $this->stack[$i],
+					'_var'       => $this->var[$i],
 					'_ref'       => $this->ref[$i],
 					'_class'     => $this->id[$i],
 					'_name'      => $this->names[$i],
@@ -367,6 +373,7 @@ final class Builder {
 
 				$this->block[$i] = new $this->types[$i]([
 					'_chain'     => $this->stack[$i],
+					'_var'       => $this->var[$i],
 					'_ref'       => $this->ref[$i],
 					'_class'     => $this->id[$i],
 					'_name'      => $this->names[$i],
@@ -382,6 +389,7 @@ final class Builder {
 
 				$this->block[$i] = new $this->types[$i]([
 					'_chain'     => $this->stack[$i],
+					'_var'       => $this->var[$i],
 					'_ref'       => $this->ref[$i],
 					'_class'     => $this->id[$i],
 					'_name'      => $this->names[$i],
@@ -396,6 +404,7 @@ final class Builder {
 
 				$this->block[$i] = new $this->types[$i]([
 					'_chain'     => $this->stack[$i],
+					'_var'       => $this->var[$i],
 					'_ref'       => $this->ref[$i],
 					'_class'     => $this->id[$i],
 					'_name'      => $this->names[$i],
@@ -412,6 +421,7 @@ final class Builder {
 
 				$this->block[$i] = new $this->types[$i]([
 					'_chain'  => $this->stack[$i],
+					'_var'       => $this->var[$i],
 					'_ref'    => $this->ref[$i],
 					'_class'  => $this->id[$i],
 					'_name'   => $this->names[$i],
@@ -424,6 +434,7 @@ final class Builder {
 
 				$this->block[$i] = new $this->types[$i]([
 					'_chain'  => $this->stack[$i],
+					'_var'       => $this->var[$i],
 					'_ref'    => $this->ref[$i],
 					'_class'  => $this->id[$i],
 					'_name'   => $this->names[$i],
@@ -438,6 +449,7 @@ final class Builder {
 
 				$this->block[$i] = new $this->types[$i]([
 					'_chain'  => $this->stack[$i],
+					'_var'       => $this->var[$i],
 					'_ref'    => $this->ref[$i],
 					'_class'  => $this->id[$i],
 					'_name'   => $this->names[$i],
@@ -451,6 +463,7 @@ final class Builder {
 
 				$this->block[$i] = new $this->types[$i]([
 					'_chain'  => $this->stack[$i],
+					'_var'       => $this->var[$i],
 					'_ref'    => $this->ref[$i],
 					'_class'  => $this->id[$i],
 					'_name'   => $this->names[$i],
@@ -498,6 +511,7 @@ final class Builder {
 			case $this->component['document']:
 				$this->block[$i] = new $this->types[$i]([
 					'_chain'     => $this->stack[$i],
+					'_var'       => $this->var[$i],
 					'_ref'       => $this->ref[$i],
 					'_class'     => $this->id[$i],
 					'_name'      => $this->names[$i],
@@ -513,6 +527,7 @@ final class Builder {
 			case $this->component['text']:
 				$this->block[$i] = new $this->types[$i]([
 					'_chain'     => $this->stack[$i],
+					'_var'       => $this->var[$i],
 					'_ref'       => $this->ref[$i],
 					'_class'     => $this->id[$i],
 					'_name'      => $this->names[$i],
