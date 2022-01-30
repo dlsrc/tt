@@ -269,7 +269,7 @@ final class Builder {
 			$split = \preg_split($this->pattern['variable'], $this->block[$i]);
 
 			foreach ($matches as $id => $match) {
-				if ('' != $split[$id]) {
+				if ('' != \trim($split[$id])) {
 					$this->stack[$i][$key] = $split[$id];
 					$key++;
 				}
@@ -298,7 +298,7 @@ final class Builder {
 
 			$id++;
 
-			if ('' != $split[$id]) {
+			if ('' != \trim($split[$id])) {
 				$this->stack[$i][$key] = $split[$id];
 			}
 		}
