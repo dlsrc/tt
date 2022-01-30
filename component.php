@@ -489,16 +489,12 @@ trait RootComponent {
 				$this->__set($name.Component::NS.$key, $val);
 			}
 		}
-		elseif (isset($this->_global[$this->_first.$name.$this->_last])) {
-			$this->_global[$this->_first.$name.$this->_last] = $value;
-		}
 		elseif (isset($this->_chain[$name])) {
 			$this->_chain[$name] = $value;
 		}
-	}
-
-	final public function add(string $name, int|float|string $value=''): void {
-		$this->_global[$this->_first.$name.$this->_last] = $value;
+		else {
+			$this->_global[$this->_first.$name.$this->_last] = $value;
+		}
 	}
 
 	final public function __toString(): string {
@@ -780,6 +776,5 @@ final class Emulator extends Component implements Wrapped {
 	public function ready(): void {}
 	protected function notify(): void {}
 	public function __toString(): string {return '';}
-	public function add(string $name, int|float|string $value=''): void {}
 	public function force(string $name, string $text): bool {return true;}
 }
