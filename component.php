@@ -309,9 +309,7 @@ trait Sequence {
 	}
 }
 
-abstract class Leaf extends Component {
-    use Sequence;
-
+trait Childless {
 	final public function __call(string $name, array $value): bool {
 		return false;
 	}
@@ -350,11 +348,29 @@ abstract class Leaf extends Component {
 		return [];
 	}
 
+	final protected function notify(): void {}
+}
+
+abstract class Leaf extends Component {
+    use Sequence;
+	use Childless;
+
 	final public function common(string $name, int|float|string $value): void {
 		$this->_var[$name] = $value;
 	}
+}
 
-	final protected function notify(): void {}
+abstract class Fragment extends Component {
+	use Childless;
+
+	protected string $_text;
+
+	public function __construct(array $state) {
+		parent::__construct($state);
+        $this->_text = $state['_text'];
+	}
+
+	final public function common(string $name, int|float|string $value): void {}
 }
 
 abstract class Performer extends Composite {
@@ -412,14 +428,6 @@ trait DependentComponent {
 	public function ready(): void {
 		$this->_exert = true;
 	}
-
-	public function isReady(): bool {
-		foreach ($this->_component as $component) {
-			if ($component->isReady()) return true;
-		}
-
-		return false;
-	}
 }
 
 trait IndependentComponent {
@@ -437,6 +445,14 @@ trait ReadyComponent {
 	}
 }
 
+trait ReadyFragment {
+	use IndependentComponent;
+
+	public function ready(): void {
+		$this->_result.= $this->_text;
+	}
+}
+
 trait ReadyVariant {
 	use IndependentComponent;
 
@@ -449,11 +465,33 @@ trait ReadyVariant {
 
 abstract class DependentLeaf extends Leaf {
 	use DependentComponent;
+
+	public function isReady(): bool {
+		return $this->_exert;
+	}
+}
+
+abstract class DependentFragment extends Fragment {
+	use DependentComponent;
+
+	public function isReady(): bool {
+		return $this->_exert;
+	}
 }
 
 abstract class DependentPerformer extends Performer {
     use DependentComponent;
+
+	public function isReady(): bool {
+		foreach ($this->_component as $component) {
+			if ($component->isReady()) return true;
+		}
+
+		return false;
+	}
 }
+
+
 
 trait WrappedComponent {
 	protected string $_before;
@@ -550,6 +588,10 @@ trait InsertionMap {
 	}
 }
 
+trait InsertionStub {
+	final public function __set(string $name, int|float|string $value): void {}
+}
+
 trait RawResult {
 	final public function getRawResult(): string {
 		return $this->_result;
@@ -580,29 +622,49 @@ trait WrappedResult {
 	}
 }
 
-trait DependentRawResult {
-	final public function getRawResult(): string {
-		if ($this->_exert) {
-			$this->_exert = false;
-
-			if ($this instanceof Composite) {
-				$this->notify();
-			}
-
-			$this->_result = \implode('', $this->_chain);
-		}
-
-		return $this->_result;
-	}
-
+trait DependentInsert {
 	final public function insert(string $text): void {
 		$this->_result = $text;
 		$this->_exert = false;
 	}
 }
 
+trait DependentCompositeResult {
+	final public function getRawResult(): string {
+		if ($this->_exert) {
+			$this->_exert = false;
+			$this->notify();
+			$this->_result = \implode('', $this->_chain);
+		}
+
+		return $this->_result;
+	}
+}
+
+trait DependentLeafResult {
+	final public function getRawResult(): string {
+		if ($this->_exert) {
+			$this->_exert = false;
+			$this->_result = \implode('', $this->_chain);
+		}
+
+		return $this->_result;
+	}
+}
+
+trait DependentFragmentResult {
+	final public function getRawResult(): string {
+		if ($this->_exert) {
+			$this->_exert = false;
+			$this->_result = $this->_text;
+		}
+
+		return $this->_result;
+	}
+}
+
 trait DependentResult {
-	use DependentRawResult;
+	use DependentInsert;
 
 	final public function getResult(): string {
 		if ($result = $this->getRawResult()) {
@@ -615,7 +677,7 @@ trait DependentResult {
 }
 
 trait WrappedDependentResult {
-	use DependentRawResult;
+	use DependentInsert;
 
 	final public function getResult(): string {
 		if ($result = $this->getRawResult()) {
@@ -642,11 +704,13 @@ final class ActiveCompositeMap extends Performer {
 final class FixedComposite extends DependentPerformer {
 	use Insertion;
 	use DependentResult;
+	use DependentCompositeResult;
 }
 
 final class FixedCompositeMap extends DependentPerformer {
 	use InsertionMap;
 	use DependentResult;
+	use DependentCompositeResult;
 }
 
 final class Document extends Performer {
@@ -681,12 +745,14 @@ final class WrappedFixedComposite extends DependentPerformer implements Wrapped 
 	use WrappedComponent;
 	use Insertion;
 	use WrappedDependentResult;
+	use DependentCompositeResult;
 }
 
 final class WrappedFixedCompositeMap extends DependentPerformer implements Wrapped {
 	use WrappedComponent;
 	use InsertionMap;
 	use WrappedDependentResult;
+	use DependentCompositeResult;
 }
 
 final class ActiveLeaf extends Leaf {
@@ -704,11 +770,13 @@ final class ActiveLeafMap extends Leaf {
 final class FixedLeaf extends DependentLeaf {
 	use Insertion;
 	use DependentResult;
+	use DependentLeafResult;
 }
 
 final class FixedLeafMap extends DependentLeaf {
 	use InsertionMap;
 	use DependentResult;
+	use DependentLeafResult;
 }
 
 final class Text extends Leaf {
@@ -734,12 +802,40 @@ final class WrappedFixedLeaf extends DependentLeaf implements Wrapped {
 	use WrappedComponent;
 	use Insertion;
 	use WrappedDependentResult;
+	use DependentLeafResult;
 }
 
 final class WrappedFixedLeafMap extends DependentLeaf implements Wrapped {
 	use WrappedComponent;
 	use InsertionMap;
 	use WrappedDependentResult;
+	use DependentLeafResult;
+}
+
+final class ActiveFragment extends Fragment {
+	use InsertionStub;
+	use ReadyFragment;
+	use Result;
+}
+
+final class FixedFragment extends DependentFragment {
+	use InsertionStub;
+	use DependentResult;
+	use DependentFragmentResult;
+}
+
+final class WrappedActiveFragment extends Fragment implements Wrapped {
+	use WrappedComponent;
+	use ReadyFragment;
+	use InsertionStub;
+	use WrappedResult;
+}
+
+final class WrappedFixedFragment extends DependentFragment implements Wrapped {
+	use WrappedComponent;
+	use InsertionStub;
+	use WrappedDependentResult;
+	use DependentFragmentResult;
 }
 
 final class Variator extends Variant {

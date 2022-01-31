@@ -76,6 +76,10 @@ final class Builder {
 			'wa_leaf_map' => __NAMESPACE__.'\\WrappedActiveLeafMap',
 			'wf_leaf'     => __NAMESPACE__.'\\WrappedFixedLeaf',
 			'wf_leaf_map' => __NAMESPACE__.'\\WrappedFixedLeafMap',
+			'a_fragment'  => __NAMESPACE__.'\\ActiveFragment',
+			'f_fragment'  => __NAMESPACE__.'\\FixedFragment',
+			'wa_fragment' => __NAMESPACE__.'\\WrappedActiveFragment',
+			'wf_fragment' => __NAMESPACE__.'\\WrappedFixedFragment',
 			'variator'    => __NAMESPACE__.'\\Variator',
 			'w_variator'  => __NAMESPACE__.'\\WrappedVariator',
 			'text'        => __NAMESPACE__.'\\Text',
@@ -332,8 +336,13 @@ final class Builder {
 		}
 	}
 
-	private function identifyType(int $id, string $leaf): void {
+	private function identifyType(int $id, string $leaf, string $fragment): void {
 		if (!isset($this->child[$id][0])) {
+			if (empty($this->ref[$id]) && isset($this->stack[$id][0]) && 1 == \count($this->stack[$id])) {
+				$this->types[$id] = $this->component[$fragment];
+				return;
+			}
+
 			$this->types[$id] = $this->component[$leaf];
 		}
 
@@ -349,21 +358,29 @@ final class Builder {
 		$cfg = Config::get();
 
 		for ($i = 0; $i < $this->size; $i++) {
+			if (empty($this->ref[$i]['var'])) {
+				unset($this->ref[$i]['var']);
+			}
+
+			if (empty($this->ref[$i]['com'])) {
+				unset($this->ref[$i]['com']);
+			}
+
 			switch ($this->types[$i]) {
 			case $this->component['a_comp']:
-				$this->identifyType($i, 'a_leaf');
+				$this->identifyType($i, 'a_leaf', 'a_fragment');
 				break;
 
 			case $this->component['wa_comp']:
-				$this->identifyType($i, 'wa_leaf');
+				$this->identifyType($i, 'wa_leaf', 'wa_fragment');
 				break;
 
 			case $this->component['f_comp']:
-				$this->identifyType($i, 'f_leaf');
+				$this->identifyType($i, 'f_leaf', 'f_fragment');
 				break;
 
 			case $this->component['wf_comp']:
-				$this->identifyType($i, 'wf_leaf');
+				$this->identifyType($i, 'wf_leaf', 'wf_fragment');
 				break;
 
 			case $this->component['document']:
@@ -372,14 +389,6 @@ final class Builder {
 				}
 
 				break;
-			}
-
-			if (empty($this->ref[$i]['var'])) {
-				unset($this->ref[$i]['var']);
-			}
-
-			if (empty($this->ref[$i]['com'])) {
-				unset($this->ref[$i]['com']);
 			}
 
 			switch ($this->types[$i]) {
@@ -494,6 +503,52 @@ final class Builder {
 					'_chain'  => $this->stack[$i],
 					'_var'       => $this->var[$i],
 					'_ref'    => $this->ref[$i],
+					'_class'  => $this->id[$i],
+					'_name'   => $this->names[$i],
+					'_before' => $this->before[$i],
+					'_after'  => $this->after[$i],
+					'_exert'  => false,
+					'_result' => '',
+				]);
+				break;
+
+			case $this->component['a_fragment']:
+
+				$this->block[$i] = new $this->types[$i]([
+					'_text'   => $this->stack[$i][0],
+					'_class'  => $this->id[$i],
+					'_name'   => $this->names[$i],
+					'_result' => '',
+				]);
+				break;
+
+			case $this->component['wa_fragment']:
+
+				$this->block[$i] = new $this->types[$i]([
+					'_text'   => $this->stack[$i][0],
+					'_class'  => $this->id[$i],
+					'_name'   => $this->names[$i],
+					'_before' => $this->before[$i],
+					'_after'  => $this->after[$i],
+					'_result' => '',
+				]);
+				break;
+
+			case $this->component['f_fragment']:
+
+				$this->block[$i] = new $this->types[$i]([
+					'_text'   => $this->stack[$i][0],
+					'_class'  => $this->id[$i],
+					'_name'   => $this->names[$i],
+					'_exert'  => false,
+					'_result' => '',
+				]);
+				break;
+
+			case $this->component['wf_fragment']:
+
+				$this->block[$i] = new $this->types[$i]([
+					'_text'   => $this->stack[$i][0],
 					'_class'  => $this->id[$i],
 					'_name'   => $this->names[$i],
 					'_before' => $this->before[$i],
