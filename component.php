@@ -227,7 +227,7 @@ abstract class Composite extends Component {
 	final protected function notify(): void {
 		foreach ($this->_component as $component) {
 			$name = Component::NS.$component->getName();
-			$this->_var[$name] = $component->getResult();
+			$this->_chain[$name] = $component->getResult();
 			$component->update();
 		}
 	}
@@ -295,8 +295,16 @@ trait Sequence {
         $this->_ref   = $state['_ref'];
         $this->_chain = $state['_chain'];
 
-		foreach ($this->_ref as $i => $name) {
-			$this->_chain[$i] =&$this->_var[$name];
+		if (isset($this->_ref['var'])) {
+			foreach ($this->_ref['var'] as $i => $name) {
+				$this->_chain[$i] =&$this->_var[$name];
+			}
+		}
+
+		if (isset($this->_ref['com'])) {
+			foreach ($this->_ref['com'] as $k => $v) {
+				$this->_chain[$k] =&$this->_chain[$v];
+			}
 		}
 	}
 }
@@ -379,7 +387,7 @@ abstract class Performer extends Composite {
 
 	final public function __unset(string $name): void {
 		if (isset($this->_component[$name])) {
-			$this->_var[Component::NS.$name] = $this->_component[$name]->getResult();
+			$this->_chain[Component::NS.$name] = $this->_component[$name]->getResult();
 			unset($this->_component[$name]);
 		}
 	}
@@ -478,7 +486,7 @@ trait RootComponent {
 	final public function __set(string $name, int|float|string|array $value): void {
 		if (\is_array($value)) {
 			foreach ($value as $key => $val) {
-				$this->__set($name.Component::NS.$key, $val);
+				$this->_var[$name.Component::NS.$key] = $value;
 			}
 		}
 		elseif (isset($this->_var[$name])) {
@@ -533,7 +541,7 @@ trait InsertionMap {
 	final public function __set(string $name, int|float|string|array $value): void {
 		if (\is_array($value)) {
 			foreach ($value as $key => $val) {
-				$this->__set($name.Component::NS.$key, $val);
+				$this->_var[$name.Component::NS.$key] = $value;
 			}
 		}
 		else {

@@ -374,6 +374,14 @@ final class Builder {
 				break;
 			}
 
+			if (empty($this->ref[$i]['var'])) {
+				unset($this->ref[$i]['var']);
+			}
+
+			if (empty($this->ref[$i]['com'])) {
+				unset($this->ref[$i]['com']);
+			}
+
 			switch ($this->types[$i]) {
 			case $this->component['a_comp']:
 			case $this->component['a_comp_map']:
