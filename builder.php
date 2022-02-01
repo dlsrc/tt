@@ -187,7 +187,7 @@ final class Builder {
 
 				$this->names[$k] = $match[2];
 
-				if (isset($match[4]) && '' != \trim($match[4])) {
+				if (isset($match[4]) && '' != $match[4]) {
     				$match[4] = \trim($match[4]);
 
 				    if (0 == \preg_match($this->pattern['wrap'], $match[4], $m)) {
