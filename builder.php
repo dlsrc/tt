@@ -187,7 +187,7 @@ final class Builder {
 
 				$this->names[$k] = $match[2];
 
-				if (isset($match[4]) && '' != $match[4]) {
+				if (isset($match[4]) && '' != \trim($match[4])) {
     				$match[4] = \trim($match[4]);
 
 				    if (0 == \preg_match($this->pattern['wrap'], $match[4], $m)) {
@@ -338,7 +338,7 @@ final class Builder {
 
 	private function identifyType(int $id, string $leaf, string $fragment): void {
 		if (!isset($this->child[$id][0])) {
-			if (empty($this->ref[$id]) && isset($this->stack[$id][0]) && 1 == \count($this->stack[$id])) {
+			if (empty($this->ref[$id]['var']) && empty($this->ref[$id]['com']) && isset($this->stack[$id][0]) && 1 == \count($this->stack[$id])) {
 				$this->types[$id] = $this->component[$fragment];
 				return;
 			}
@@ -358,14 +358,6 @@ final class Builder {
 		$cfg = Config::get();
 
 		for ($i = 0; $i < $this->size; $i++) {
-			if (empty($this->ref[$i]['var'])) {
-				unset($this->ref[$i]['var']);
-			}
-
-			if (empty($this->ref[$i]['com'])) {
-				unset($this->ref[$i]['com']);
-			}
-
 			switch ($this->types[$i]) {
 			case $this->component['a_comp']:
 				$this->identifyType($i, 'a_leaf', 'a_fragment');
@@ -398,7 +390,8 @@ final class Builder {
 				$this->block[$i] = new $this->types[$i]([
 					'_chain'     => $this->stack[$i],
 					'_var'       => $this->var[$i],
-					'_ref'       => $this->ref[$i],
+					'_ref'       => $this->ref[$i]['var'],
+					'_child'     => $this->ref[$i]['com'],
 					'_class'     => $this->id[$i],
 					'_name'      => $this->names[$i],
 					'_component' => [],
@@ -412,7 +405,8 @@ final class Builder {
 				$this->block[$i] = new $this->types[$i]([
 					'_chain'     => $this->stack[$i],
 					'_var'       => $this->var[$i],
-					'_ref'       => $this->ref[$i],
+					'_ref'       => $this->ref[$i]['var'],
+					'_child'     => $this->ref[$i]['com'],
 					'_class'     => $this->id[$i],
 					'_name'      => $this->names[$i],
 					'_before'    => $this->before[$i],
@@ -428,7 +422,8 @@ final class Builder {
 				$this->block[$i] = new $this->types[$i]([
 					'_chain'     => $this->stack[$i],
 					'_var'       => $this->var[$i],
-					'_ref'       => $this->ref[$i],
+					'_ref'       => $this->ref[$i]['var'],
+					'_child'     => $this->ref[$i]['com'],
 					'_class'     => $this->id[$i],
 					'_name'      => $this->names[$i],
 					'_component' => [],
@@ -443,7 +438,8 @@ final class Builder {
 				$this->block[$i] = new $this->types[$i]([
 					'_chain'     => $this->stack[$i],
 					'_var'       => $this->var[$i],
-					'_ref'       => $this->ref[$i],
+					'_ref'       => $this->ref[$i]['var'],
+					'_child'     => $this->ref[$i]['com'],
 					'_class'     => $this->id[$i],
 					'_name'      => $this->names[$i],
 					'_before'    => $this->before[$i],
@@ -459,8 +455,8 @@ final class Builder {
 
 				$this->block[$i] = new $this->types[$i]([
 					'_chain'  => $this->stack[$i],
-					'_var'       => $this->var[$i],
-					'_ref'    => $this->ref[$i],
+					'_var'    => $this->var[$i],
+					'_ref'    => $this->ref[$i]['var'],
 					'_class'  => $this->id[$i],
 					'_name'   => $this->names[$i],
 					'_result' => '',
@@ -472,8 +468,8 @@ final class Builder {
 
 				$this->block[$i] = new $this->types[$i]([
 					'_chain'  => $this->stack[$i],
-					'_var'       => $this->var[$i],
-					'_ref'    => $this->ref[$i],
+					'_var'    => $this->var[$i],
+					'_ref'    => $this->ref[$i]['var'],
 					'_class'  => $this->id[$i],
 					'_name'   => $this->names[$i],
 					'_before' => $this->before[$i],
@@ -487,8 +483,8 @@ final class Builder {
 
 				$this->block[$i] = new $this->types[$i]([
 					'_chain'  => $this->stack[$i],
-					'_var'       => $this->var[$i],
-					'_ref'    => $this->ref[$i],
+					'_var'    => $this->var[$i],
+					'_ref'    => $this->ref[$i]['var'],
 					'_class'  => $this->id[$i],
 					'_name'   => $this->names[$i],
 					'_exert'  => false,
@@ -501,8 +497,8 @@ final class Builder {
 
 				$this->block[$i] = new $this->types[$i]([
 					'_chain'  => $this->stack[$i],
-					'_var'       => $this->var[$i],
-					'_ref'    => $this->ref[$i],
+					'_var'    => $this->var[$i],
+					'_ref'    => $this->ref[$i]['var'],
 					'_class'  => $this->id[$i],
 					'_name'   => $this->names[$i],
 					'_before' => $this->before[$i],
@@ -596,7 +592,8 @@ final class Builder {
 				$this->block[$i] = new $this->types[$i]([
 					'_chain'     => $this->stack[$i],
 					'_var'       => $this->var[$i],
-					'_ref'       => $this->ref[$i],
+					'_ref'       => $this->ref[$i]['var'],
+					'_child'     => $this->ref[$i]['com'],
 					'_class'     => $this->id[$i],
 					'_name'      => $this->names[$i],
 					'_component' => [],
@@ -612,7 +609,8 @@ final class Builder {
 				$this->block[$i] = new $this->types[$i]([
 					'_chain'     => $this->stack[$i],
 					'_var'       => $this->var[$i],
-					'_ref'       => $this->ref[$i],
+					'_ref'       => $this->ref[$i]['var'],
+					'_child'     => $this->ref[$i]['com'],
 					'_class'     => $this->id[$i],
 					'_name'      => $this->names[$i],
 					'_global'    => $this->globs,

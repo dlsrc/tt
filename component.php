@@ -284,31 +284,6 @@ abstract class Variant extends Composite {
 	}
 }
 
-trait Sequence {
-    protected array $_var;
-	protected array $_ref;
-	protected array $_chain;
-
-	public function __construct(array $state) {
-		parent::__construct($state);
-        $this->_var   = $state['_var'];
-        $this->_ref   = $state['_ref'];
-        $this->_chain = $state['_chain'];
-
-		if (isset($this->_ref['var'])) {
-			foreach ($this->_ref['var'] as $i => $name) {
-				$this->_chain[$i] =&$this->_var[$name];
-			}
-		}
-
-		if (isset($this->_ref['com'])) {
-			foreach ($this->_ref['com'] as $k => $v) {
-				$this->_chain[$k] =&$this->_chain[$v];
-			}
-		}
-	}
-}
-
 trait Childless {
 	final public function __call(string $name, array $value): bool {
 		return false;
@@ -352,8 +327,22 @@ trait Childless {
 }
 
 abstract class Leaf extends Component {
-    use Sequence;
 	use Childless;
+
+    protected array $_var;
+	protected array $_ref;
+	protected array $_chain;
+
+	public function __construct(array $state) {
+		parent::__construct($state);
+        $this->_var   = $state['_var'];
+        $this->_ref   = $state['_ref'];
+        $this->_chain = $state['_chain'];
+
+		foreach ($this->_ref as $i => $name) {
+			$this->_chain[$i] =&$this->_var[$name];
+		}
+	}
 
 	final public function common(string $name, int|float|string $value): void {
 		$this->_var[$name] = $value;
@@ -374,7 +363,26 @@ abstract class Fragment extends Component {
 }
 
 abstract class Performer extends Composite {
-    use Sequence;
+	protected array $_var;
+	protected array $_ref;
+	protected array $_child;
+	protected array $_chain;
+
+	public function __construct(array $state) {
+		parent::__construct($state);
+        $this->_var   = $state['_var'];
+        $this->_ref   = $state['_ref'];
+        $this->_child = $state['_child'];
+        $this->_chain = $state['_chain'];
+
+		foreach ($this->_ref as $i => $name) {
+			$this->_chain[$i] =&$this->_var[$name];
+		}
+
+		foreach ($this->_child as $k => $v) {
+			$this->_chain[$k] =&$this->_chain[$v];
+		}
+	}
 
 	final public function __call(string $name, array $value): bool {
 		if (!isset($this->_component[$name])) {
@@ -490,8 +498,6 @@ abstract class DependentPerformer extends Performer {
 		return false;
 	}
 }
-
-
 
 trait WrappedComponent {
 	protected string $_before;
