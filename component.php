@@ -403,32 +403,16 @@ abstract class Performer extends Composite {
 			$this->_component[$name] = clone $this->_component[$name];
 		}
 
-		if (!empty($this->_var)) {
-			$clone = [];
+		$clone = [];
 
-			foreach ($this->_var as $name => $value) {
-				$clone[$name] = $value;
-			}
-
-			$this->_var = $clone;
-
-			foreach ($this->_ref as $i => $name) {
-				$this->_chain[$i] =&$this->_var[$name];
-			}
+		foreach ($this->_var as $name => $value) {
+			$clone[$name] = $value;
 		}
 
-		if (!empty($this->_child)) {
-			$clone = [];
+		$this->_var = $clone;
 
-			foreach ($this->_child as $name => $value) {
-				$clone[$name] = $value;
-			}
-
-			$this->_child = $clone;
-
-			foreach ($this->_child as $k => $v) {
-				$this->_chain[$k] =&$this->_chain[$v];
-			}
+		foreach ($this->_ref as $i => $name) {
+			$this->_chain[$i] =&$this->_var[$name];
 		}
 	}
 
