@@ -145,12 +145,6 @@ abstract class Composite extends Component {
         $this->_component = $state['_component'];
 	}
 
-	final public function __clone(): void {
-		foreach (\array_keys($this->_component) as $name) {
-			$this->_component[$name] = clone $this->_component[$name];
-		}
-	}
-
 	final public function __isset(string $name): bool {
 		return isset($this->_component[$name]);
 	}
@@ -241,6 +235,12 @@ abstract class Variant extends Composite {
         $this->_variant = $state['_variant'];
 	}
 
+	public function __clone(): void {
+		foreach (\array_keys($this->_component) as $name) {
+			$this->_component[$name] = clone $this->_component[$name];
+		}
+	}
+
 	final public function __call(string $name, array $value): bool {
 		if (isset($this->_component[$name])) {
 			$this->_variant = $name;
@@ -304,6 +304,20 @@ trait Sequence {
 abstract class Leaf extends Component {
     use Sequence;
 
+	public function __clone(): void {
+		$clone = [];
+
+		foreach ($this->_var as $name => $value) {
+			$clone[$name] = $value;
+		}
+
+		$this->_var = $clone;
+
+		foreach ($this->_ref as $i => $name) {
+			$this->_chain[$i] =&$this->_var[$name];
+		}
+	}
+
 	final public function __call(string $name, array $value): bool {
 		return false;
 	}
@@ -351,6 +365,24 @@ abstract class Leaf extends Component {
 
 abstract class Performer extends Composite {
     use Sequence;
+
+	public function __clone(): void {
+		foreach (\array_keys($this->_component) as $name) {
+			$this->_component[$name] = clone $this->_component[$name];
+		}
+
+		$clone = [];
+
+		foreach ($this->_var as $name => $value) {
+			$clone[$name] = $value;
+		}
+
+		$this->_var = $clone;
+
+		foreach ($this->_ref as $i => $name) {
+			$this->_chain[$i] =&$this->_var[$name];
+		}
+	}
 
 	final public function __call(string $name, array $value): bool {
 		if (!isset($this->_component[$name])) {
