@@ -20,16 +20,17 @@ namespace dl\tt;
 
 final class Info implements \dl\Sociable {
 	use \dl\Informer;
-	final public const VERSION  = '1.0.0-lite-dev2';
+	private const VERSION  = '1.0.0';
+	private const RELEASE  = 'lite-dev2';
 
 	public static function build(string $template, string|null $markup=null): string {
 		if ($markup && 'ROOT' != $markup) {
 			return \substr($template, 0, \strrpos($template, '.')).
-			'-'.$markup.'-'.self::VERSION.'.php';
+			'-'.$markup.'-'.self::VERSION.'-'.self::RELEASE.'.php';
 		}
 
 		return \substr($template, 0, \strrpos($template, '.')).
-			'-'.self::VERSION.'.php';
+			'-'.self::VERSION.'-'.self::RELEASE.'.php';
 	}
 
 	public static function collect(string $template): string {
