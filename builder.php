@@ -263,6 +263,8 @@ final class Builder {
 		for ($i = 0; $i < $this->size; $i++) {
 			$key = 0;
 			$this->ref[$i] = [];
+			$this->ref[$i]['var'] = [];
+			$this->ref[$i]['com'] = [];
 			$this->var[$i] = [];
 
 			if (0 == \preg_match_all($this->pattern['variable'], $this->block[$i], $matches, \PREG_SET_ORDER)) {
@@ -284,23 +286,42 @@ final class Builder {
 
 				if (\str_starts_with($match[1], $refns)) {
 					$match[1] = Component::NS.\substr($match[1], 1);
+					$var = false;
 				}
-
-				if (!isset($this->var[$i][$match[1]])) {
-					$this->var[$i][$match[1]] = $match[3]??'';
-					$this->stack[$i][$key] = '';
-					$this->ref[$i][$key] = $match[1];
+				elseif (\str_starts_with($match[1], Component::NS)) {
+					$var = false;
 				}
 				else {
-					if (isset($match[3]) && '' == $this->var[$i][$match[1]]) {
-						$this->var[$i][$match[1]] = $match[3];
-					}
-
-					$this->stack[$i][$key] = '';
-					$this->ref[$i][$key] = $match[1];
+					$var = true;
 				}
 
-				$key++;
+				if ($var) {
+					if (!isset($this->var[$i][$match[1]])) {
+						$this->var[$i][$match[1]] = $match[3]??'';
+						$this->stack[$i][$key] = '';
+						$this->ref[$i]['var'][$key] = $match[1];
+					}
+					else {
+						if (isset($match[3]) && '' == $this->var[$i][$match[1]]) {
+							$this->var[$i][$match[1]] = $match[3];
+						}
+
+						$this->stack[$i][$key] = '';
+						$this->ref[$i]['var'][$key] = $match[1];
+					}
+
+					$key++;
+				}
+				else {
+					if (!isset($this->stack[$i][$match[1]])) {
+						$this->stack[$i][$match[1]] = '';
+					}
+					else {
+						$this->stack[$i][$key] = $this->stack[$i][$match[1]];
+						$this->ref[$i]['com'][$key] = $match[1];
+						$key++;
+					}
+				}
 			}
 
 			$id++;

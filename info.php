@@ -21,7 +21,7 @@ namespace dl\tt;
 final class Info implements \dl\Sociable {
 	use \dl\Informer;
 	private const VERSION  = '1.0.0';
-	private const RELEASE  = 'dev1';
+	private const RELEASE  = 'dev2';
 
 	public static function build(string $template, string|null $markup=null): string {
 		if ($markup && 'ROOT' != $markup) {
