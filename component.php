@@ -41,7 +41,7 @@
 	final class ActiveCompositeMap        extends Performer          use InsertionMap, ReadyComponent, Result
 	final class FixedComposite            extends DependentPerformer use Insertion, DependentResult
 	final class FixedCompositeMap         extends DependentPerformer use InsertionMap, DependentResult
-	final class Document                  extends Performer          use RootComponent, IndependentComponent
+	final class Complex                   extends Performer          use RootComponent, IndependentComponent
 	final class WrappedActiveComposite    extends Performer          use WrappedComponent, ReadyComponent, Insertion, WrappedResult
 	final class WrappedActiveCompositeMap extends Performer          use WrappedComponent, ReadyComponent, InsertionMap, WrappedResult
 	final class WrappedFixedComposite     extends DependentPerformer use WrappedComponent, Insertion, WrappedDependentResult
@@ -50,7 +50,7 @@
 	final class ActiveLeafMap             extends Leaf               use InsertionMap, ReadyComponent Result
 	final class FixedLeaf                 extends DependentLeaf      use Insertion, DependentResult
 	final class FixedLeafMap              extends DependentLeaf      use InsertionMap, DependentResult
-	final class Text                      extends Leaf               use RootComponent, IndependentComponent
+	final class Document                  extends Leaf               use RootComponent, IndependentComponent
 	final class WrappedActiveLeaf         extends Leaf               use WrappedComponent, ReadyComponent, Insertion, WrappedResult
 	final class WrappedActiveLeafMap      extends Leaf               use WrappedComponent, ReadyComponent, InsertionMap, WrappedResult
 	final class WrappedFixedLeaf          extends DependentLeaf      use WrappedComponent, Insertion, WrappedDependentResult
@@ -363,7 +363,7 @@ abstract class Leaf extends Component {
 	}
 }
 
-abstract class Fragment extends Component {
+abstract class Text extends Component {
 	use Childless;
 
 	protected string $_text;
@@ -485,7 +485,7 @@ trait ReadyComponent {
 	}
 }
 
-trait ReadyFragment {
+trait ReadyText {
 	use IndependentComponent;
 
 	public function ready(): void {
@@ -511,7 +511,7 @@ abstract class DependentLeaf extends Leaf {
 	}
 }
 
-abstract class DependentFragment extends Fragment {
+abstract class DependentText extends Text {
 	use DependentComponent;
 
 	public function isReady(): bool {
@@ -690,7 +690,7 @@ trait DependentLeafResult {
 	}
 }
 
-trait DependentFragmentResult {
+trait DependentTextResult {
 	final public function getRawResult(): string {
 		if ($this->_exert) {
 			$this->_exert = false;
@@ -751,7 +751,7 @@ final class FixedCompositeMap extends DependentPerformer {
 	use DependentCompositeResult;
 }
 
-final class Document extends Performer {
+final class Complex extends Performer {
 	use RootComponent;
 	use IndependentComponent;
 
@@ -817,7 +817,7 @@ final class FixedLeafMap extends DependentLeaf {
 	use DependentLeafResult;
 }
 
-final class Text extends Leaf {
+final class Document extends Leaf {
 	use RootComponent;
 	use IndependentComponent;
 }
@@ -850,30 +850,30 @@ final class WrappedFixedLeafMap extends DependentLeaf implements Wrapped {
 	use DependentLeafResult;
 }
 
-final class ActiveFragment extends Fragment {
+final class ActiveText extends Text {
 	use InsertionStub;
-	use ReadyFragment;
+	use ReadyText;
 	use Result;
 }
 
-final class FixedFragment extends DependentFragment {
+final class FixedText extends DependentText {
 	use InsertionStub;
 	use DependentResult;
-	use DependentFragmentResult;
+	use DependentTextResult;
 }
 
-final class WrappedActiveFragment extends Fragment implements Wrapped {
+final class WrappedActiveText extends Text implements Wrapped {
 	use WrappedComponent;
-	use ReadyFragment;
+	use ReadyText;
 	use InsertionStub;
 	use WrappedResult;
 }
 
-final class WrappedFixedFragment extends DependentFragment implements Wrapped {
+final class WrappedFixedText extends DependentText implements Wrapped {
 	use WrappedComponent;
 	use InsertionStub;
 	use WrappedDependentResult;
-	use DependentFragmentResult;
+	use DependentTextResult;
 }
 
 final class Variator extends Variant {

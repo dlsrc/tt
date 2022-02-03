@@ -21,16 +21,23 @@ namespace dl\tt;
 final class Info implements \dl\Sociable {
 	use \dl\Informer;
 	private const VERSION  = '1.0.0';
-	private const RELEASE  = 'dev4';
+	private const RELEASE  = '';
 
 	public static function build(string $template, string|null $markup=null): string {
-		if ($markup && 'ROOT' != $markup) {
-			return \substr($template, 0, \strrpos($template, '.')).
-			'-'.$markup.'-'.self::VERSION.'-'.self::RELEASE.'.php';
+		if (self::RELEASE) {
+			$release = '-'.self::VERSION.'-'.self::RELEASE;
+		}
+		else {
+			$release = '-'.self::VERSION;
 		}
 
-		return \substr($template, 0, \strrpos($template, '.')).
-			'-'.self::VERSION.'-'.self::RELEASE.'.php';
+		if ($markup && 'ROOT' != $markup) {
+			return \substr($template, 0, \strrpos($template, '.'))
+			.'-'.$markup.$release.'.php';
+		}
+
+		return \substr($template, 0, \strrpos($template, '.'))
+		.$release.'.php';
 	}
 
 	public static function collect(string $template): string {
