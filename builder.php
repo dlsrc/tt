@@ -29,7 +29,6 @@ final class Builder {
 	private array $ref;
 	private array $var;
 	private array $child;
-	private int   $size;
 	private array $globs;
 	private array $before;
 	private array $after;
@@ -51,7 +50,6 @@ final class Builder {
 		$this->prepareDependencies();
 		$this->prepareStacks();
 		$this->prepareComponents();
-		$this->buildComposition();
 
 		return $this->block[0];
 	}
@@ -121,7 +119,6 @@ final class Builder {
 		$this->globs  = [];
 		$this->before = [];
 		$this->after  = [];
-		$this->size   = 0;
 	}
 
 	private function prepareGlobalVars(): void {
@@ -247,20 +244,12 @@ final class Builder {
 				$k++;
 			}
 		}
-
-		$this->size = \sizeof($this->block);
 	}
 
 	private function prepareStacks(): void {
-		//$cfg = Config::get();
-		//$notrim = $cfg->keep_spaces;
-		//$begin  = $cfg->var_begin;
-		//$end    = $cfg->var_end;
-		//$refer  = $cfg->refer;
-		//$refns  = $cfg->refns;
 		$refns  = Config::get()->refns;
 
-		for ($i = 0; $i < $this->size; $i++) {
+		foreach (\array_keys($this->block) as $i) {
 			$key = 0;
 			$this->ref[$i] = [];
 			$this->var[$i] = [];
@@ -324,10 +313,21 @@ final class Builder {
 		}
 	}
 
+	private function getComposition(int $i): array {
+		$component = [];
+
+		foreach ($this->child[$i] as $id) {
+			$name = $this->block[$id]->getName();
+			$component[$name] = $this->block[$id];
+		}
+
+		return $component;
+	}
+
 	private function prepareComponents(): void {
 		$cfg = Config::get();
 
-		for ($i = 0; $i < $this->size; $i++) {
+		for ($i = \array_key_last($this->types); $i >= 0; $i--) {
 			switch ($this->types[$i]) {
 			case $this->component['a_comp']:
 				$this->identifyType($i, 'a_leaf');
@@ -363,7 +363,7 @@ final class Builder {
 					'_ref'       => $this->ref[$i],
 					'_class'     => $this->id[$i],
 					'_name'      => $this->names[$i],
-					'_component' => [],
+					'_component' => $this->getComposition($i),
 					'_result'    => '',
 				]);
 				break;
@@ -379,7 +379,7 @@ final class Builder {
 					'_name'      => $this->names[$i],
 					'_before'    => $this->before[$i],
 					'_after'     => $this->after[$i],
-					'_component' => [],
+					'_component' => $this->getComposition($i),
 					'_result'    => '',
 				]);
 				break;
@@ -393,7 +393,7 @@ final class Builder {
 					'_ref'       => $this->ref[$i],
 					'_class'     => $this->id[$i],
 					'_name'      => $this->names[$i],
-					'_component' => [],
+					'_component' => $this->getComposition($i),
 					'_exert'     => false,
 					'_result'    => '',
 				]);
@@ -410,7 +410,7 @@ final class Builder {
 					'_name'      => $this->names[$i],
 					'_before'    => $this->before[$i],
 					'_after'     => $this->after[$i],
-					'_component' => [],
+					'_component' => $this->getComposition($i),
 					'_exert'     => false,
 					'_result'    => '',
 				]);
@@ -421,7 +421,7 @@ final class Builder {
 
 				$this->block[$i] = new $this->types[$i]([
 					'_chain'  => $this->stack[$i],
-					'_var'       => $this->var[$i],
+					'_var'    => $this->var[$i],
 					'_ref'    => $this->ref[$i],
 					'_class'  => $this->id[$i],
 					'_name'   => $this->names[$i],
@@ -434,7 +434,7 @@ final class Builder {
 
 				$this->block[$i] = new $this->types[$i]([
 					'_chain'  => $this->stack[$i],
-					'_var'       => $this->var[$i],
+					'_var'    => $this->var[$i],
 					'_ref'    => $this->ref[$i],
 					'_class'  => $this->id[$i],
 					'_name'   => $this->names[$i],
@@ -449,7 +449,7 @@ final class Builder {
 
 				$this->block[$i] = new $this->types[$i]([
 					'_chain'  => $this->stack[$i],
-					'_var'       => $this->var[$i],
+					'_var'    => $this->var[$i],
 					'_ref'    => $this->ref[$i],
 					'_class'  => $this->id[$i],
 					'_name'   => $this->names[$i],
@@ -463,7 +463,7 @@ final class Builder {
 
 				$this->block[$i] = new $this->types[$i]([
 					'_chain'  => $this->stack[$i],
-					'_var'       => $this->var[$i],
+					'_var'    => $this->var[$i],
 					'_ref'    => $this->ref[$i],
 					'_class'  => $this->id[$i],
 					'_name'   => $this->names[$i],
@@ -479,7 +479,7 @@ final class Builder {
 					$this->block[$i] = new $this->types[$i]([
 						'_class'     => $this->id[$i],
 						'_name'      => $this->names[$i],
-						'_component' => [],
+						'_component' => $this->getComposition($i),
 						'_variant'   => $this->names[$this->child[$i][0]],
 						'_result'    => '',
 					]);
@@ -497,7 +497,7 @@ final class Builder {
 						'_name'      => $this->names[$i],
 						'_before'    => $this->before[$i],
 						'_after'     => $this->after[$i],
-						'_component' => [],
+						'_component' => $this->getComposition($i),
 						'_variant'   => $this->names[$this->child[$i][0]],
 						'_result'    => '',
 					]);
@@ -515,7 +515,7 @@ final class Builder {
 					'_ref'       => $this->ref[$i],
 					'_class'     => $this->id[$i],
 					'_name'      => $this->names[$i],
-					'_component' => [],
+					'_component' => $this->getComposition($i),
 					'_global'    => $this->globs,
 					'_first'     => $cfg->global_begin,
 					'_last'      => $cfg->global_end,
@@ -526,15 +526,15 @@ final class Builder {
 
 			case $this->component['text']:
 				$this->block[$i] = new $this->types[$i]([
-					'_chain'     => $this->stack[$i],
-					'_var'       => $this->var[$i],
-					'_ref'       => $this->ref[$i],
-					'_class'     => $this->id[$i],
-					'_name'      => $this->names[$i],
-					'_global'    => $this->globs,
-					'_first'     => $cfg->global_begin,
-					'_last'      => $cfg->global_end,
-					'_result'    => '',
+					'_chain'  => $this->stack[$i],
+					'_var'    => $this->var[$i],
+					'_ref'    => $this->ref[$i],
+					'_class'  => $this->id[$i],
+					'_name'   => $this->names[$i],
+					'_global' => $this->globs,
+					'_first'  => $cfg->global_begin,
+					'_last'   => $cfg->global_end,
+					'_result' => '',
 				]);
 
 				break;
@@ -545,16 +545,6 @@ final class Builder {
 					'_name'   => 'Emulator',
 					'_result' => '',
 				]);
-			}
-		}
-	}
-
-	private function buildComposition(): void {
-		for ($i = 0; $i < $this->size; $i++) {
-			if (isset($this->child[$i])) {
-				foreach ($this->child[$i] as $ob) {
-					$this->block[$i]->attach($this->block[$ob]);
-				}
 			}
 		}
 	}
