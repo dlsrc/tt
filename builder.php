@@ -364,7 +364,6 @@ final class Builder {
 					'_class'     => $this->id[$i],
 					'_name'      => $this->names[$i],
 					'_component' => $this->getComposition($i),
-					'_result'    => '',
 				]);
 				break;
 
@@ -380,7 +379,6 @@ final class Builder {
 					'_before'    => $this->before[$i],
 					'_after'     => $this->after[$i],
 					'_component' => $this->getComposition($i),
-					'_result'    => '',
 				]);
 				break;
 
@@ -395,7 +393,6 @@ final class Builder {
 					'_name'      => $this->names[$i],
 					'_component' => $this->getComposition($i),
 					'_exert'     => false,
-					'_result'    => '',
 				]);
 				break;
 
@@ -412,7 +409,6 @@ final class Builder {
 					'_after'     => $this->after[$i],
 					'_component' => $this->getComposition($i),
 					'_exert'     => false,
-					'_result'    => '',
 				]);
 				break;
 
@@ -420,12 +416,11 @@ final class Builder {
 			case $this->component['a_leaf_map']:
 
 				$this->block[$i] = new $this->types[$i]([
-					'_chain'  => $this->stack[$i],
-					'_var'    => $this->var[$i],
-					'_ref'    => $this->ref[$i],
-					'_class'  => $this->id[$i],
-					'_name'   => $this->names[$i],
-					'_result' => '',
+					'_chain' => $this->stack[$i],
+					'_var'   => $this->var[$i],
+					'_ref'   => $this->ref[$i],
+					'_class' => $this->id[$i],
+					'_name'  => $this->names[$i],
 				]);
 				break;
 
@@ -440,7 +435,6 @@ final class Builder {
 					'_name'   => $this->names[$i],
 					'_before' => $this->before[$i],
 					'_after'  => $this->after[$i],
-					'_result' => '',
 				]);
 				break;
 
@@ -448,13 +442,12 @@ final class Builder {
 			case $this->component['f_leaf_map']:
 
 				$this->block[$i] = new $this->types[$i]([
-					'_chain'  => $this->stack[$i],
-					'_var'    => $this->var[$i],
-					'_ref'    => $this->ref[$i],
-					'_class'  => $this->id[$i],
-					'_name'   => $this->names[$i],
-					'_exert'  => false,
-					'_result' => '',
+					'_chain' => $this->stack[$i],
+					'_var'   => $this->var[$i],
+					'_ref'   => $this->ref[$i],
+					'_class' => $this->id[$i],
+					'_name'  => $this->names[$i],
+					'_exert' => false,
 				]);
 				break;
 
@@ -470,7 +463,6 @@ final class Builder {
 					'_before' => $this->before[$i],
 					'_after'  => $this->after[$i],
 					'_exert'  => false,
-					'_result' => '',
 				]);
 				break;
 
@@ -481,7 +473,6 @@ final class Builder {
 						'_name'      => $this->names[$i],
 						'_component' => $this->getComposition($i),
 						'_variant'   => $this->names[$this->child[$i][0]],
-						'_result'    => '',
 					]);
 				}
 				else {
@@ -499,7 +490,6 @@ final class Builder {
 						'_after'     => $this->after[$i],
 						'_component' => $this->getComposition($i),
 						'_variant'   => $this->names[$this->child[$i][0]],
-						'_result'    => '',
 					]);
 				}
 				else {
@@ -519,7 +509,6 @@ final class Builder {
 					'_global'    => $this->globs,
 					'_first'     => $cfg->global_begin,
 					'_last'      => $cfg->global_end,
-					'_result'    => '',
 				]);
 
 				break;
@@ -534,16 +523,14 @@ final class Builder {
 					'_global' => $this->globs,
 					'_first'  => $cfg->global_begin,
 					'_last'   => $cfg->global_end,
-					'_result' => '',
 				]);
 
 				break;
 
 			default:
 				$this->block[$i] = new Emulator([
-					'_class'  => 'Emulator',
-					'_name'   => 'Emulator',
-					'_result' => '',
+					'_class' => 'Emulator',
+					'_name'  => 'Emulator',
 				]);
 			}
 		}
