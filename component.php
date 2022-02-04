@@ -120,9 +120,8 @@ abstract class Component implements \dl\DirectCallable {
 
 	final public static function emulate(): Emulator {
 		return new Emulator([
-			'_class'  => 'Emulator',
-			'_name'   => 'Emulator',
-			'_result' => '',
+			'_class' => 'Emulator',
+			'_name'  => 'Emulator',
 		]);
 	}
 
