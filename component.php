@@ -95,7 +95,6 @@ abstract class Component implements \dl\DirectCallable {
 	abstract public function insert(string $text): void;
 	abstract public function common(string $name, string|int|float $value): void;
 	abstract public function ready(): void;
-	abstract protected function notify(): void;
 
     protected string $_name;
     protected string $_class;
@@ -215,14 +214,6 @@ abstract class Composite extends Component {
 
 		return $names;
 	}
-
-	final protected function notify(): void {
-		foreach ($this->_component as $component) {
-			$name = Component::NS.$component->getName();
-			$this->_chain[$name] = $component->getResult();
-			$component->update();
-		}
-	}
 }
 
 abstract class Variant extends Composite {
@@ -318,8 +309,6 @@ trait Childless {
 	final public function getChildNames(string $class): array {
 		return [];
 	}
-
-	final protected function notify(): void {}
 }
 
 abstract class Leaf extends Component {
@@ -451,6 +440,14 @@ abstract class Performer extends Composite {
 			$component->common($name, $value);
 		}
 	}
+
+	final protected function notify(): void {
+		foreach ($this->_component as $component) {
+			$name = Component::NS.$component->getName();
+			$this->_chain[$name] = $component->getResult();
+			$component->update();
+		}
+	}
 }
 
 trait DependentComponent {
@@ -472,11 +469,19 @@ trait IndependentComponent {
 	}
 }
 
-trait ReadyComponent {
+trait ReadyComposite {
 	use IndependentComponent;
 
 	public function ready(): void {
 		$this->notify();
+		$this->_result.= \implode('', $this->_chain);
+	}
+}
+
+trait ReadyLeaf {
+	use IndependentComponent;
+
+	public function ready(): void {
 		$this->_result.= \implode('', $this->_chain);
 	}
 }
@@ -685,13 +690,13 @@ trait WrappedDependentResult {
 
 final class ActiveComposite extends Performer {
 	use Insertion;
-	use ReadyComponent;
+	use ReadyComposite;
 	use Result;
 }
 
 final class ActiveCompositeMap extends Performer {
 	use InsertionMap;
-	use ReadyComponent;
+	use ReadyComposite;
 	use Result;
 }
 
@@ -813,7 +818,7 @@ final class Complex extends Performer {
 
 final class WrappedActiveComposite extends Performer implements Wrapped {
 	use WrappedComponent;
-	use ReadyComponent;
+	use ReadyComposite;
 	use Insertion;
 	use WrappedResult;
 
@@ -845,7 +850,7 @@ final class WrappedActiveComposite extends Performer implements Wrapped {
 
 final class WrappedActiveCompositeMap extends Performer implements Wrapped {
 	use WrappedComponent;
-	use ReadyComponent;
+	use ReadyComposite;
 	use InsertionMap;
 	use WrappedResult;
 
@@ -949,13 +954,13 @@ final class WrappedFixedCompositeMap extends DependentPerformer implements Fixed
 
 final class ActiveLeaf extends Leaf {
 	use Insertion;
-	use ReadyComponent;
+	use ReadyLeaf;
 	use Result;
 }
 
 final class ActiveLeafMap extends Leaf {
 	use InsertionMap;
-	use ReadyComponent;
+	use ReadyLeaf;
 	use Result;
 }
 
@@ -1017,7 +1022,7 @@ final class Document extends Leaf {
 
 final class WrappedActiveLeaf extends Leaf implements Wrapped {
 	use WrappedComponent;
-	use ReadyComponent;
+	use ReadyLeaf;
 	use Insertion;
 	use WrappedResult;
 
@@ -1041,7 +1046,7 @@ final class WrappedActiveLeaf extends Leaf implements Wrapped {
 
 final class WrappedActiveLeafMap extends Leaf implements Wrapped {
 	use WrappedComponent;
-	use ReadyComponent;
+	use ReadyLeaf;
 	use InsertionMap;
 	use WrappedResult;
 
@@ -1200,29 +1205,6 @@ final class WrappedVariator extends Variant implements Wrapped {
 			'_result'    => '',
 		]);
 	}
-/*
-	public function getClean(): string {
-		return Variator::class;
-	}
-
-	public function extractSnippet(): Variator {
-		$component = [];
-		
-		foreach (\array_keys($this->_component) as $name) {
-			$component[$name] = clone $this->_component[$name];
-		}
-
-		$class = $this->getClean();
-
-		return new $class([
-			'_class'     => $this->_class,
-			'_name'      => $this->_name,
-			'_component' => $component,
-			'_variant'   => $this->_variant,
-			'_result'    => '',
-		]);
-	}
-*/
 }
 
 final class Emulator extends Component {
@@ -1242,7 +1224,6 @@ final class Emulator extends Component {
 	public function insert(string $text): void {}
 	public function common(string $name, array|string|int|float $value): void {}
 	public function ready(): void {}
-	protected function notify(): void {}
 	public function __toString(): string {return '';}
 	public function force(string $name, string $text): bool {return true;}
 }
