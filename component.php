@@ -74,7 +74,6 @@ interface Wrapped {
 abstract class Component implements \dl\DirectCallable {
 	final public const NS = '.';
 
-	abstract public function attach(Component $c): void;
 	abstract public function drop(): void;
 	abstract public function isComponent(string $name): bool;
 	abstract public function getChild(string $class): Component;
@@ -153,11 +152,6 @@ abstract class Composite extends Component {
 
 	final public function __isset(string $name): bool {
 		return isset($this->_component[$name]);
-	}
-
-	final public function attach(Component $c): void {
-		$name = $c->getName();
-		$this->_component[$name] = $c;
 	}
 
 	final public function drop(): void {
@@ -314,8 +308,6 @@ trait Childless {
 	}
 
 	final public function __unset(string $name): void {}
-
-	final public function attach(Component $c): void {}
 
 	final public function drop(): void {
 		$this->_result = '';
@@ -830,7 +822,6 @@ final class WrappedVariator extends Variant implements Wrapped {
 }
 
 final class Emulator extends Component implements Wrapped {
-	public function attach(Component $c): void {}
 	public function drop(): void {}
 	public function isComponent(string $name): bool {return false;}
 	public function getChild(string $class): Component {return $this;}
