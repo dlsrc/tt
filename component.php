@@ -120,9 +120,8 @@ abstract class Component implements \dl\DirectCallable {
 
 	final public static function emulate(): Emulator {
 		return new Emulator([
-			'_class'  => 'Emulator',
-			'_name'   => 'Emulator',
-			'_result' => '',
+			'_class' => 'Emulator',
+			'_name'  => 'Emulator',
 		]);
 	}
 
@@ -289,7 +288,7 @@ trait Sequence {
         $this->_ref   = $state['_ref'];
         $this->_chain = $state['_chain'];
 
-		foreach ($this->_ref as $i => $name) {
+		foreach ($this->_ref['var'] as $i => $name) {
 			$this->_chain[$i] =&$this->_var[$name];
 		}
 	}
@@ -307,7 +306,7 @@ abstract class Leaf extends Component {
 
 		$this->_var = $clone;
 
-		foreach ($this->_ref as $i => $name) {
+		foreach ($this->_ref['var'] as $i => $name) {
 			$this->_chain[$i] =&$this->_var[$name];
 		}
 	}
@@ -371,7 +370,7 @@ abstract class Performer extends Composite {
 
 		$this->_var = $clone;
 
-		foreach ($this->_ref as $i => $name) {
+		foreach ($this->_ref['var'] as $i => $name) {
 			$this->_chain[$i] =&$this->_var[$name];
 		}
 	}

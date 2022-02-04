@@ -50,7 +50,7 @@ final class Builder {
 		$this->prepareDependencies();
 		$this->prepareStacks();
 		$this->prepareComponents();
-	
+		
 		return $this->block[0];
 	}
 
@@ -437,11 +437,11 @@ final class Builder {
 			case $this->component['a_leaf_map']:
 
 				$this->block[$i] = new $this->types[$i]([
-					'_chain'  => $this->stack[$i],
-					'_var'    => $this->var[$i],
-					'_ref'    => $this->ref[$i],
-					'_class'  => $this->id[$i],
-					'_name'   => $this->names[$i],
+					'_chain' => $this->stack[$i],
+					'_var'   => $this->var[$i],
+					'_ref'   => $this->ref[$i],
+					'_class' => $this->id[$i],
+					'_name'  => $this->names[$i],
 				]);
 				break;
 
@@ -463,12 +463,12 @@ final class Builder {
 			case $this->component['f_leaf_map']:
 
 				$this->block[$i] = new $this->types[$i]([
-					'_chain'  => $this->stack[$i],
-					'_var'    => $this->var[$i],
-					'_ref'    => $this->ref[$i],
-					'_class'  => $this->id[$i],
-					'_name'   => $this->names[$i],
-					'_exert'  => false,
+					'_chain' => $this->stack[$i],
+					'_var'   => $this->var[$i],
+					'_ref'   => $this->ref[$i],
+					'_class' => $this->id[$i],
+					'_name'  => $this->names[$i],
+					'_exert' => false,
 				]);
 				break;
 
@@ -550,8 +550,8 @@ final class Builder {
 
 			default:
 				$this->block[$i] = new Emulator([
-					'_class'  => 'Emulator',
-					'_name'   => 'Emulator',
+					'_class' => 'Emulator',
+					'_name'  => 'Emulator',
 				]);
 			}
 		}
