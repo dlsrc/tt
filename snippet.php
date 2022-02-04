@@ -31,13 +31,16 @@ final class Snippet {
 			$name = $com->getClass();
 		}
 
-		self::$_snippet[$name] = clone $com;
-
-		if (self::$_snippet[$name] instanceof Wrapped) {
-			self::$_snippet[$name]->unwrap();
+		if ($com instanceof Fixed) {
+			self::$_snippet[$name] = $com->getActive();
 		}
-
-		self::$_snippet[$name]->drop();
+		elseif ($com instanceof Wrapped) {
+			self::$_snippet[$name] = $com->getClean();
+		}
+		else {
+			self::$_snippet[$name] = clone $com;
+			self::$_snippet[$name]->drop();
+		}
 
 		if (!empty($vars)) {
 			self::prepare($name, $vars);

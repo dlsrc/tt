@@ -69,12 +69,16 @@ namespace dl\tt;
 
 interface Wrapped {
 	public function unwrap(): void;
+	public function getClean(): Component;
+}
+
+interface Fixed {
+	public function getActive(): Component;
 }
 
 abstract class Component implements \dl\DirectCallable {
 	final public const NS = '.';
 
-	abstract public function attach(Component $c): void;
 	abstract public function drop(): void;
 	abstract public function isComponent(string $name): bool;
 	abstract public function getChild(string $class): Component;
@@ -147,11 +151,6 @@ abstract class Composite extends Component {
 
 	final public function __isset(string $name): bool {
 		return isset($this->_component[$name]);
-	}
-
-	final public function attach(Component $c): void {
-		$name = $c->getName();
-		$this->_component[$name] = $c;
 	}
 
 	final public function drop(): void {
@@ -299,8 +298,6 @@ trait Childless {
 	}
 
 	final public function __unset(string $name): void {}
-
-	final public function attach(Component $c): void {}
 
 	final public function drop(): void {
 		$this->_result = '';
@@ -548,31 +545,6 @@ trait WrappedComponent {
 }
 
 trait RootComponent {
-	protected array  $_global;
-	protected string $_first;
-	protected string $_last;
-
-	public function __construct(array $state) {
-		parent::__construct($state);
-		$this->_global = $state['_global'];
-		$this->_first  = $state['_first'];
-		$this->_last   = $state['_last'];
-	}
-
-	final public function __set(string $name, int|float|string|array $value): void {
-		if (\is_array($value)) {
-			foreach ($value as $key => $val) {
-				$this->_var[$name.Component::NS.$key] = $value;
-			}
-		}
-		elseif (isset($this->_var[$name])) {
-			$this->_var[$name] = $value;
-		}
-		else {
-			$this->_global[$this->_first.$name.$this->_last] = $value;
-		}
-	}
-
 	final public function __toString(): string {
 		$this->ready();
 		return $this->_result;
@@ -589,21 +561,6 @@ trait RootComponent {
 
 	final public function insert(string $text): void {
 		return;
-	}
-
-	final public function ready(): void {
-		if ('' == $this->_result) {
-			$this->notify();
-			$this->_result = \implode('', $this->_chain);
-			
-			if (!empty($this->_global)) {
-				$this->_result = \str_replace(
-					\array_keys($this->_global),
-					$this->_global,
-					$this->_result
-				);
-			}
-		}
 	}
 }
 
@@ -739,21 +696,111 @@ final class ActiveCompositeMap extends Performer {
 	use Result;
 }
 
-final class FixedComposite extends DependentPerformer {
+final class FixedComposite extends DependentPerformer implements Fixed {
 	use Insertion;
 	use DependentResult;
 	use DependentCompositeResult;
+
+	public function getActive(): ActiveComposite {
+		$component = [];
+
+		foreach (\array_keys($this->_component) as $name) {
+			$component[$name] = clone $this->_component[$name];
+		}
+
+		$var = [];
+
+		foreach ($this->_var as $name => $value) {
+			$var[$name] = $value;
+		}
+
+		return new ActiveComposite([
+			'_chain'     => $this->_chain,
+			'_var'       => $var,
+			'_ref'       => $this->_ref,
+			'_child'     => $this->_child,
+			'_class'     => $this->_class,
+			'_name'      => $this->_name,
+			'_component' => $component,
+			'_result'    => '',
+		]);
+	}
 }
 
-final class FixedCompositeMap extends DependentPerformer {
+final class FixedCompositeMap extends DependentPerformer implements Fixed {
 	use InsertionMap;
 	use DependentResult;
 	use DependentCompositeResult;
+
+	public function getActive(): ActiveCompositeMap {
+		$component = [];
+
+		foreach (\array_keys($this->_component) as $name) {
+			$component[$name] = clone $this->_component[$name];
+		}
+
+		$var = [];
+
+		foreach ($this->_var as $name => $value) {
+			$var[$name] = $value;
+		}
+
+		return new ActiveCompositeMap([
+			'_chain'     => $this->_chain,
+			'_var'       => $var,
+			'_ref'       => $this->_ref,
+			'_child'     => $this->_child,
+			'_class'     => $this->_class,
+			'_name'      => $this->_name,
+			'_component' => $component,
+			'_result'    => '',
+		]);
+	}
 }
 
 final class Complex extends Performer {
 	use RootComponent;
 	use IndependentComponent;
+
+	protected array  $_global;
+	protected string $_first;
+	protected string $_last;
+
+	public function __construct(array $state) {
+		parent::__construct($state);
+		$this->_global = $state['_global'];
+		$this->_first  = $state['_first'];
+		$this->_last   = $state['_last'];
+	}
+
+	public function __set(string $name, int|float|string|array $value): void {
+		if (\is_array($value)) {
+			foreach ($value as $key => $val) {
+				$this->_var[$name.Component::NS.$key] = $value;
+			}
+		}
+		elseif (isset($this->_var[$name])) {
+			$this->_var[$name] = $value;
+		}
+		else {
+			$this->_global[$this->_first.$name.$this->_last] = $value;
+		}
+	}
+
+	public function ready(): void {
+		if ('' == $this->_result) {
+			$this->notify();
+			$this->_result = \implode('', $this->_chain);
+			
+			if (!empty($this->_global)) {
+				$this->_result = \str_replace(
+					\array_keys($this->_global),
+					$this->_global,
+					$this->_result
+				);
+			}
+		}
+	}
 
 	final public function force(string $name, string $text): bool {
 		if (!isset($this->_component[$name])) {
@@ -770,6 +817,31 @@ final class WrappedActiveComposite extends Performer implements Wrapped {
 	use ReadyComponent;
 	use Insertion;
 	use WrappedResult;
+
+	public function getClean(): ActiveComposite {
+		$component = [];
+
+		foreach (\array_keys($this->_component) as $name) {
+			$component[$name] = clone $this->_component[$name];
+		}
+
+		$var = [];
+
+		foreach ($this->_var as $name => $value) {
+			$var[$name] = $value;
+		}
+
+		return new ActiveComposite([
+			'_chain'     => $this->_chain,
+			'_var'       => $var,
+			'_ref'       => $this->_ref,
+			'_child'     => $this->_child,
+			'_class'     => $this->_class,
+			'_name'      => $this->_name,
+			'_component' => $component,
+			'_result'    => '',
+		]);
+	}
 }
 
 final class WrappedActiveCompositeMap extends Performer implements Wrapped {
@@ -777,20 +849,103 @@ final class WrappedActiveCompositeMap extends Performer implements Wrapped {
 	use ReadyComponent;
 	use InsertionMap;
 	use WrappedResult;
+
+	public function getClean(): ActiveCompositeMap {
+		$component = [];
+
+		foreach (\array_keys($this->_component) as $name) {
+			$component[$name] = clone $this->_component[$name];
+		}
+
+		$var = [];
+
+		foreach ($this->_var as $name => $value) {
+			$var[$name] = $value;
+		}
+
+		return new ActiveCompositeMap([
+			'_chain'     => $this->_chain,
+			'_var'       => $var,
+			'_ref'       => $this->_ref,
+			'_child'     => $this->_child,
+			'_class'     => $this->_class,
+			'_name'      => $this->_name,
+			'_component' => $component,
+			'_result'    => '',
+		]);
+	}
 }
 
-final class WrappedFixedComposite extends DependentPerformer implements Wrapped {
+final class WrappedFixedComposite extends DependentPerformer implements Fixed, Wrapped {
 	use WrappedComponent;
 	use Insertion;
 	use WrappedDependentResult;
 	use DependentCompositeResult;
+
+	public function getActive(): ActiveComposite {
+		$component = [];
+
+		foreach (\array_keys($this->_component) as $name) {
+			$component[$name] = clone $this->_component[$name];
+		}
+
+		$var = [];
+
+		foreach ($this->_var as $name => $value) {
+			$var[$name] = $value;
+		}
+
+		return new ActiveComposite([
+			'_chain'     => $this->_chain,
+			'_var'       => $var,
+			'_ref'       => $this->_ref,
+			'_child'     => $this->_child,
+			'_class'     => $this->_class,
+			'_name'      => $this->_name,
+			'_component' => $component,
+			'_result'    => '',
+		]);
+	}
+
+	public function getClean(): ActiveComposite {
+		return $this->getActive();
+	}
 }
 
-final class WrappedFixedCompositeMap extends DependentPerformer implements Wrapped {
+final class WrappedFixedCompositeMap extends DependentPerformer implements Fixed, Wrapped {
 	use WrappedComponent;
 	use InsertionMap;
 	use WrappedDependentResult;
 	use DependentCompositeResult;
+
+	public function getActive(): ActiveCompositeMap {
+		$component = [];
+
+		foreach (\array_keys($this->_component) as $name) {
+			$component[$name] = clone $this->_component[$name];
+		}
+
+		$var = [];
+
+		foreach ($this->_var as $name => $value) {
+			$var[$name] = $value;
+		}
+
+		return new ActiveCompositeMap([
+			'_chain'     => $this->_chain,
+			'_var'       => $var,
+			'_ref'       => $this->_ref,
+			'_child'     => $this->_child,
+			'_class'     => $this->_class,
+			'_name'      => $this->_name,
+			'_component' => $component,
+			'_result'    => '',
+		]);
+	}
+
+	public function getClean(): ActiveCompositeMap {
+		return $this->getActive();
+	}
 }
 
 final class ActiveLeaf extends Leaf {
@@ -805,21 +960,60 @@ final class ActiveLeafMap extends Leaf {
 	use Result;
 }
 
-final class FixedLeaf extends DependentLeaf {
+final class FixedLeaf extends DependentLeaf implements Fixed {
 	use Insertion;
 	use DependentResult;
 	use DependentLeafResult;
+
+	public function getActive(): ActiveLeaf {
+		$var = [];
+
+		foreach($this->_var as $name => $value) {
+			$var[$name] = $value;
+		}
+
+		return new ActiveLeaf([
+			'_chain'  => $this->_chain,
+			'_var'    => $var,
+			'_ref'    => $this->_ref,
+			'_class'  => $this->_class,
+			'_name'   => $this->_name,
+			'_result' => '',
+		]);
+	}
 }
 
-final class FixedLeafMap extends DependentLeaf {
+final class FixedLeafMap extends DependentLeaf implements Fixed {
 	use InsertionMap;
 	use DependentResult;
 	use DependentLeafResult;
+
+	public function getActive(): ActiveLeafMap {
+		$var = [];
+
+		foreach($this->_var as $name => $value) {
+			$var[$name] = $value;
+		}
+
+		return new ActiveLeafMap([
+			'_chain'  => $this->_chain,
+			'_var'    => $var,
+			'_ref'    => $this->_ref,
+			'_class'  => $this->_class,
+			'_name'   => $this->_name,
+			'_result' => '',
+		]);
+	}
 }
 
 final class Document extends Leaf {
+	use InsertionMap;
 	use RootComponent;
 	use IndependentComponent;
+
+	public function ready(): void {
+		$this->_result.= \implode('', $this->_chain);
+	}
 }
 
 final class WrappedActiveLeaf extends Leaf implements Wrapped {
@@ -827,6 +1021,23 @@ final class WrappedActiveLeaf extends Leaf implements Wrapped {
 	use ReadyComponent;
 	use Insertion;
 	use WrappedResult;
+
+	public function getClean(): ActiveLeaf {
+		$var = [];
+
+		foreach($this->_var as $name => $value) {
+			$var[$name] = $value;
+		}
+
+		return new ActiveLeaf([
+			'_chain'  => $this->_chain,
+			'_var'    => $var,
+			'_ref'    => $this->_ref,
+			'_class'  => $this->_class,
+			'_name'   => $this->_name,
+			'_result' => '',
+		]);
+	}
 }
 
 final class WrappedActiveLeafMap extends Leaf implements Wrapped {
@@ -834,20 +1045,78 @@ final class WrappedActiveLeafMap extends Leaf implements Wrapped {
 	use ReadyComponent;
 	use InsertionMap;
 	use WrappedResult;
+
+	public function getClean(): ActiveLeafMap {
+		$var = [];
+
+		foreach($this->_var as $name => $value) {
+			$var[$name] = $value;
+		}
+
+		return new ActiveLeafMap([
+			'_chain'  => $this->_chain,
+			'_var'    => $var,
+			'_ref'    => $this->_ref,
+			'_class'  => $this->_class,
+			'_name'   => $this->_name,
+			'_result' => '',
+		]);
+	}
 }
 
-final class WrappedFixedLeaf extends DependentLeaf implements Wrapped {
+final class WrappedFixedLeaf extends DependentLeaf implements Fixed, Wrapped {
 	use WrappedComponent;
 	use Insertion;
 	use WrappedDependentResult;
 	use DependentLeafResult;
-}
 
-final class WrappedFixedLeafMap extends DependentLeaf implements Wrapped {
+	public function getActive(): ActiveLeaf {
+		$var = [];
+
+		foreach($this->_var as $name => $value) {
+			$var[$name] = $value;
+		}
+
+		return new ActiveLeaf([
+			'_chain'  => $this->_chain,
+			'_var'    => $var,
+			'_ref'    => $this->_ref,
+			'_class'  => $this->_class,
+			'_name'   => $this->_name,
+			'_result' => '',
+		]);
+	}
+
+	public function getClean(): ActiveLeaf {
+		return $this->getActive();
+	}}
+
+final class WrappedFixedLeafMap extends DependentLeaf implements Fixed, Wrapped {
 	use WrappedComponent;
 	use InsertionMap;
 	use WrappedDependentResult;
 	use DependentLeafResult;
+
+	public function getActive(): ActiveLeafMap {
+		$var = [];
+
+		foreach($this->_var as $name => $value) {
+			$var[$name] = $value;
+		}
+
+		return new ActiveLeafMap([
+			'_chain'  => $this->_chain,
+			'_var'    => $var,
+			'_ref'    => $this->_ref,
+			'_class'  => $this->_class,
+			'_name'   => $this->_name,
+			'_result' => '',
+		]);
+	}
+
+	public function getClean(): ActiveLeafMap {
+		return $this->getActive();
+	}
 }
 
 final class ActiveText extends Text {
@@ -856,10 +1125,19 @@ final class ActiveText extends Text {
 	use Result;
 }
 
-final class FixedText extends DependentText {
+final class FixedText extends DependentText implements Fixed {
 	use InsertionStub;
 	use DependentResult;
 	use DependentTextResult;
+
+	public function getActive(): ActiveText {
+		return new ActiveText([
+			'_text'   => $this->_text,
+			'_class'  => $this->_class,
+			'_name'   => $this->_name,
+			'_result' => '',
+		]);
+	}
 }
 
 final class WrappedActiveText extends Text implements Wrapped {
@@ -867,13 +1145,35 @@ final class WrappedActiveText extends Text implements Wrapped {
 	use ReadyText;
 	use InsertionStub;
 	use WrappedResult;
+
+	public function getClean(): ActiveText {
+		return new ActiveText([
+			'_text'   => $this->_text,
+			'_class'  => $this->_class,
+			'_name'   => $this->_name,
+			'_result' => '',
+		]);
+	}
 }
 
-final class WrappedFixedText extends DependentText implements Wrapped {
+final class WrappedFixedText extends DependentText implements Fixed, Wrapped {
 	use WrappedComponent;
 	use InsertionStub;
 	use WrappedDependentResult;
 	use DependentTextResult;
+
+	public function getActive(): ActiveText {
+		return new ActiveText([
+			'_text'   => $this->_text,
+			'_class'  => $this->_class,
+			'_name'   => $this->_name,
+			'_result' => '',
+		]);
+	}
+
+	public function getClean(): ActiveText {
+		return $this->getActive();
+	}
 }
 
 final class Variator extends Variant {
@@ -885,10 +1185,48 @@ final class WrappedVariator extends Variant implements Wrapped {
 	use WrappedComponent;
 	use ReadyVariant;
 	use WrappedResult;
+
+	public function getClean(): Variator {
+		$component = [];
+		
+		foreach (\array_keys($this->_component) as $name) {
+			$component[$name] = clone $this->_component[$name];
+		}
+
+		return new Variator([
+			'_class'     => $this->_class,
+			'_name'      => $this->_name,
+			'_component' => $component,
+			'_variant'   => $this->_variant,
+			'_result'    => '',
+		]);
+	}
+/*
+	public function getClean(): string {
+		return Variator::class;
+	}
+
+	public function extractSnippet(): Variator {
+		$component = [];
+		
+		foreach (\array_keys($this->_component) as $name) {
+			$component[$name] = clone $this->_component[$name];
+		}
+
+		$class = $this->getClean();
+
+		return new $class([
+			'_class'     => $this->_class,
+			'_name'      => $this->_name,
+			'_component' => $component,
+			'_variant'   => $this->_variant,
+			'_result'    => '',
+		]);
+	}
+*/
 }
 
-final class Emulator extends Component implements Wrapped {
-	public function attach(Component $c): void {}
+final class Emulator extends Component {
 	public function drop(): void {}
 	public function isComponent(string $name): bool {return false;}
 	public function getChild(string $class): Component {return $this;}
@@ -903,7 +1241,6 @@ final class Emulator extends Component implements Wrapped {
 	public function getRawResult(): string {return '';}
 	public function isReady(): bool {return true;}
 	public function insert(string $text): void {}
-	public function unwrap(): void {}
 	public function common(string $name, array|string|int|float $value): void {}
 	public function ready(): void {}
 	protected function notify(): void {}
