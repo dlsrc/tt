@@ -31,15 +31,16 @@ final class Snippet {
 			$name = $com->getClass();
 		}
 
-		if ($com instanceof Fixed) {
+		if ($com instanceof Activable) {
 			self::$_snippet[$name] = $com->getActive();
-		}
-		elseif ($com instanceof Wrapped) {
-			self::$_snippet[$name] = $com->getClean();
 		}
 		else {
 			self::$_snippet[$name] = clone $com;
 			self::$_snippet[$name]->drop();
+
+			if (self::$_snippet[$name] instanceof Wrapped) {
+				self::$_snippet[$name]->unwrap();
+			}
 		}
 
 		if (!empty($vars)) {
@@ -163,13 +164,18 @@ final class Snippet {
 
 		if (Page::exists() && Page::child($name)) {
 			$com = Page::open()->$name;
-			self::$_snippet[$name] = clone $com;
 
-			if (self::$_snippet[$name] instanceof Wrapped) {
-				self::$_snippet[$name]->unwrap();
+			if ($com instanceof Activable) {
+				self::$_snippet[$name] = $com->getActive();
 			}
+			else {
+				self::$_snippet[$name] = clone $com;
+				self::$_snippet[$name]->drop();
 
-			self::$_snippet[$name]->drop();
+				if (self::$_snippet[$name] instanceof Wrapped) {
+					self::$_snippet[$name]->unwrap();
+				}
+			}
 
 			if (!empty($vars)) {
 				self::prepare($name, $vars);

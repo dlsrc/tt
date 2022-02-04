@@ -69,11 +69,11 @@ namespace dl\tt;
 
 interface Wrapped {
 	public function unwrap(): void;
-	public function getClean(): Component;
 }
 
-interface Fixed {
+interface Activable {
 	public function getActive(): Component;
+	public function getActiveClass(): string;
 }
 
 abstract class Component implements \dl\DirectCallable {
@@ -688,6 +688,68 @@ trait WrappedDependentResult {
 	}
 }
 
+trait PerformerActivator {
+	public function getActive(): Performer {
+		$component = [];
+
+		foreach (\array_keys($this->_component) as $name) {
+			$component[$name] = clone $this->_component[$name];
+		}
+
+		$var = [];
+
+		foreach ($this->_var as $name => $value) {
+			$var[$name] = $value;
+		}
+
+		$class = $this->getActiveClass();
+
+		return new $class([
+			'_chain'     => $this->_chain,
+			'_var'       => $var,
+			'_ref'       => $this->_ref,
+			'_child'     => $this->_child,
+			'_class'     => $this->_class,
+			'_name'      => $this->_name,
+			'_component' => $component,
+		]);
+	}
+}
+
+trait LeafActivator {
+	public function getActive(): Leaf {
+		$var = [];
+
+		foreach($this->_var as $name => $value) {
+			$var[$name] = $value;
+		}
+
+		$class = $this->getActiveClass();
+
+		return new $class([
+			'_chain'  => $this->_chain,
+			'_var'    => $var,
+			'_ref'    => $this->_ref,
+			'_class'  => $this->_class,
+			'_name'   => $this->_name,
+		]);
+	}
+}
+
+trait TextActivator {
+	public function getActiveClass(): string {
+		return ActiveText::class;
+	}
+
+	public function getActive(): ActiveText {
+		return new ActiveText([
+			'_text'   => $this->_text,
+			'_class'  => $this->_class,
+			'_name'   => $this->_name,
+		]);
+	}
+}
+
 final class ActiveComposite extends Performer {
 	use Insertion;
 	use ReadyComposite;
@@ -700,64 +762,213 @@ final class ActiveCompositeMap extends Performer {
 	use Result;
 }
 
-final class FixedComposite extends DependentPerformer implements Fixed {
+final class FixedComposite extends DependentPerformer implements Activable {
 	use Insertion;
 	use DependentResult;
 	use DependentCompositeResult;
+	use PerformerActivator;
 
-	public function getActive(): ActiveComposite {
-		$component = [];
-
-		foreach (\array_keys($this->_component) as $name) {
-			$component[$name] = clone $this->_component[$name];
-		}
-
-		$var = [];
-
-		foreach ($this->_var as $name => $value) {
-			$var[$name] = $value;
-		}
-
-		return new ActiveComposite([
-			'_chain'     => $this->_chain,
-			'_var'       => $var,
-			'_ref'       => $this->_ref,
-			'_child'     => $this->_child,
-			'_class'     => $this->_class,
-			'_name'      => $this->_name,
-			'_component' => $component,
-			'_result'    => '',
-		]);
+	public function getActiveClass(): string {
+		return ActiveComposite::class;
 	}
 }
 
-final class FixedCompositeMap extends DependentPerformer implements Fixed {
+final class FixedCompositeMap extends DependentPerformer implements Activable {
 	use InsertionMap;
 	use DependentResult;
 	use DependentCompositeResult;
+	use PerformerActivator;
 
-	public function getActive(): ActiveCompositeMap {
+	public function getActiveClass(): string {
+		return ActiveCompositeMap::class;
+	}
+}
+
+final class WrappedActiveComposite extends Performer implements Activable, Wrapped {
+	use WrappedComponent;
+	use ReadyComposite;
+	use Insertion;
+	use WrappedResult;
+	use PerformerActivator;
+
+	public function getActiveClass(): string {
+		return ActiveComposite::class;
+	}
+}
+
+final class WrappedActiveCompositeMap extends Performer implements Activable, Wrapped {
+	use WrappedComponent;
+	use ReadyComposite;
+	use InsertionMap;
+	use WrappedResult;
+	use PerformerActivator;
+
+	public function getActiveClass(): string {
+		return ActiveCompositeMap::class;
+	}
+}
+
+final class WrappedFixedComposite extends DependentPerformer implements Activable, Wrapped {
+	use WrappedComponent;
+	use Insertion;
+	use WrappedDependentResult;
+	use DependentCompositeResult;
+	use PerformerActivator;
+
+	public function getActiveClass(): string {
+		return ActiveComposite::class;
+	}
+}
+
+final class WrappedFixedCompositeMap extends DependentPerformer implements Activable, Wrapped {
+	use WrappedComponent;
+	use InsertionMap;
+	use WrappedDependentResult;
+	use DependentCompositeResult;
+	use PerformerActivator;
+
+	public function getActiveClass(): string {
+		return ActiveCompositeMap::class;
+	}
+}
+
+final class ActiveLeaf extends Leaf {
+	use Insertion;
+	use ReadyLeaf;
+	use Result;
+}
+
+final class ActiveLeafMap extends Leaf {
+	use InsertionMap;
+	use ReadyLeaf;
+	use Result;
+}
+
+final class FixedLeaf extends DependentLeaf implements Activable {
+	use Insertion;
+	use DependentResult;
+	use DependentLeafResult;
+	use LeafActivator;
+
+	public function getActiveClass(): string {
+		return ActiveLeaf::class;
+	}
+}
+
+final class FixedLeafMap extends DependentLeaf implements Activable {
+	use InsertionMap;
+	use DependentResult;
+	use DependentLeafResult;
+	use LeafActivator;
+
+	public function getActiveClass(): string {
+		return ActiveLeafMap::class;
+	}
+}
+
+final class WrappedActiveLeaf extends Leaf implements Activable, Wrapped {
+	use WrappedComponent;
+	use ReadyLeaf;
+	use Insertion;
+	use WrappedResult;
+	use LeafActivator;
+
+	public function getActiveClass(): string {
+		return ActiveLeaf::class;
+	}
+}
+
+final class WrappedActiveLeafMap extends Leaf implements Activable, Wrapped {
+	use WrappedComponent;
+	use ReadyLeaf;
+	use InsertionMap;
+	use WrappedResult;
+	use LeafActivator;
+
+	public function getActiveClass(): string {
+		return ActiveLeafMap::class;
+	}
+}
+
+final class WrappedFixedLeaf extends DependentLeaf implements Activable, Wrapped {
+	use WrappedComponent;
+	use Insertion;
+	use WrappedDependentResult;
+	use DependentLeafResult;
+	use LeafActivator;
+
+	public function getActiveClass(): string {
+		return ActiveLeaf::class;
+	}
+}
+
+final class WrappedFixedLeafMap extends DependentLeaf implements Activable, Wrapped {
+	use WrappedComponent;
+	use InsertionMap;
+	use WrappedDependentResult;
+	use DependentLeafResult;
+	use LeafActivator;
+
+	public function getActiveClass(): string {
+		return ActiveLeafMap::class;
+	}
+}
+
+final class ActiveText extends Text {
+	use InsertionStub;
+	use ReadyText;
+	use Result;
+}
+
+final class FixedText extends DependentText implements Activable {
+	use InsertionStub;
+	use DependentResult;
+	use DependentTextResult;
+	use TextActivator;
+}
+
+final class WrappedActiveText extends Text implements Activable, Wrapped {
+	use WrappedComponent;
+	use ReadyText;
+	use InsertionStub;
+	use WrappedResult;
+	use TextActivator;
+}
+
+final class WrappedFixedText extends DependentText implements Activable, Wrapped {
+	use WrappedComponent;
+	use InsertionStub;
+	use WrappedDependentResult;
+	use DependentTextResult;
+	use TextActivator;
+}
+
+final class Variator extends Variant {
+	use ReadyVariant;
+	use Result;
+}
+
+final class WrappedVariator extends Variant implements Activable, Wrapped {
+	use WrappedComponent;
+	use ReadyVariant;
+	use WrappedResult;
+
+	public function getActiveClass(): string {
+		return Variator::class;
+	}
+
+	public function getActive(): Variator {
 		$component = [];
-
+		
 		foreach (\array_keys($this->_component) as $name) {
 			$component[$name] = clone $this->_component[$name];
 		}
 
-		$var = [];
-
-		foreach ($this->_var as $name => $value) {
-			$var[$name] = $value;
-		}
-
-		return new ActiveCompositeMap([
-			'_chain'     => $this->_chain,
-			'_var'       => $var,
-			'_ref'       => $this->_ref,
-			'_child'     => $this->_child,
+		return new Variator([
 			'_class'     => $this->_class,
 			'_name'      => $this->_name,
 			'_component' => $component,
-			'_result'    => '',
+			'_variant'   => $this->_variant,
 		]);
 	}
 }
@@ -816,200 +1027,6 @@ final class Complex extends Performer {
 	}
 }
 
-final class WrappedActiveComposite extends Performer implements Wrapped {
-	use WrappedComponent;
-	use ReadyComposite;
-	use Insertion;
-	use WrappedResult;
-
-	public function getClean(): ActiveComposite {
-		$component = [];
-
-		foreach (\array_keys($this->_component) as $name) {
-			$component[$name] = clone $this->_component[$name];
-		}
-
-		$var = [];
-
-		foreach ($this->_var as $name => $value) {
-			$var[$name] = $value;
-		}
-
-		return new ActiveComposite([
-			'_chain'     => $this->_chain,
-			'_var'       => $var,
-			'_ref'       => $this->_ref,
-			'_child'     => $this->_child,
-			'_class'     => $this->_class,
-			'_name'      => $this->_name,
-			'_component' => $component,
-			'_result'    => '',
-		]);
-	}
-}
-
-final class WrappedActiveCompositeMap extends Performer implements Wrapped {
-	use WrappedComponent;
-	use ReadyComposite;
-	use InsertionMap;
-	use WrappedResult;
-
-	public function getClean(): ActiveCompositeMap {
-		$component = [];
-
-		foreach (\array_keys($this->_component) as $name) {
-			$component[$name] = clone $this->_component[$name];
-		}
-
-		$var = [];
-
-		foreach ($this->_var as $name => $value) {
-			$var[$name] = $value;
-		}
-
-		return new ActiveCompositeMap([
-			'_chain'     => $this->_chain,
-			'_var'       => $var,
-			'_ref'       => $this->_ref,
-			'_child'     => $this->_child,
-			'_class'     => $this->_class,
-			'_name'      => $this->_name,
-			'_component' => $component,
-			'_result'    => '',
-		]);
-	}
-}
-
-final class WrappedFixedComposite extends DependentPerformer implements Fixed, Wrapped {
-	use WrappedComponent;
-	use Insertion;
-	use WrappedDependentResult;
-	use DependentCompositeResult;
-
-	public function getActive(): ActiveComposite {
-		$component = [];
-
-		foreach (\array_keys($this->_component) as $name) {
-			$component[$name] = clone $this->_component[$name];
-		}
-
-		$var = [];
-
-		foreach ($this->_var as $name => $value) {
-			$var[$name] = $value;
-		}
-
-		return new ActiveComposite([
-			'_chain'     => $this->_chain,
-			'_var'       => $var,
-			'_ref'       => $this->_ref,
-			'_child'     => $this->_child,
-			'_class'     => $this->_class,
-			'_name'      => $this->_name,
-			'_component' => $component,
-			'_result'    => '',
-		]);
-	}
-
-	public function getClean(): ActiveComposite {
-		return $this->getActive();
-	}
-}
-
-final class WrappedFixedCompositeMap extends DependentPerformer implements Fixed, Wrapped {
-	use WrappedComponent;
-	use InsertionMap;
-	use WrappedDependentResult;
-	use DependentCompositeResult;
-
-	public function getActive(): ActiveCompositeMap {
-		$component = [];
-
-		foreach (\array_keys($this->_component) as $name) {
-			$component[$name] = clone $this->_component[$name];
-		}
-
-		$var = [];
-
-		foreach ($this->_var as $name => $value) {
-			$var[$name] = $value;
-		}
-
-		return new ActiveCompositeMap([
-			'_chain'     => $this->_chain,
-			'_var'       => $var,
-			'_ref'       => $this->_ref,
-			'_child'     => $this->_child,
-			'_class'     => $this->_class,
-			'_name'      => $this->_name,
-			'_component' => $component,
-			'_result'    => '',
-		]);
-	}
-
-	public function getClean(): ActiveCompositeMap {
-		return $this->getActive();
-	}
-}
-
-final class ActiveLeaf extends Leaf {
-	use Insertion;
-	use ReadyLeaf;
-	use Result;
-}
-
-final class ActiveLeafMap extends Leaf {
-	use InsertionMap;
-	use ReadyLeaf;
-	use Result;
-}
-
-final class FixedLeaf extends DependentLeaf implements Fixed {
-	use Insertion;
-	use DependentResult;
-	use DependentLeafResult;
-
-	public function getActive(): ActiveLeaf {
-		$var = [];
-
-		foreach($this->_var as $name => $value) {
-			$var[$name] = $value;
-		}
-
-		return new ActiveLeaf([
-			'_chain'  => $this->_chain,
-			'_var'    => $var,
-			'_ref'    => $this->_ref,
-			'_class'  => $this->_class,
-			'_name'   => $this->_name,
-			'_result' => '',
-		]);
-	}
-}
-
-final class FixedLeafMap extends DependentLeaf implements Fixed {
-	use InsertionMap;
-	use DependentResult;
-	use DependentLeafResult;
-
-	public function getActive(): ActiveLeafMap {
-		$var = [];
-
-		foreach($this->_var as $name => $value) {
-			$var[$name] = $value;
-		}
-
-		return new ActiveLeafMap([
-			'_chain'  => $this->_chain,
-			'_var'    => $var,
-			'_ref'    => $this->_ref,
-			'_class'  => $this->_class,
-			'_name'   => $this->_name,
-			'_result' => '',
-		]);
-	}
-}
-
 final class Document extends Leaf {
 	use InsertionMap;
 	use RootComponent;
@@ -1017,193 +1034,6 @@ final class Document extends Leaf {
 
 	public function ready(): void {
 		$this->_result.= \implode('', $this->_chain);
-	}
-}
-
-final class WrappedActiveLeaf extends Leaf implements Wrapped {
-	use WrappedComponent;
-	use ReadyLeaf;
-	use Insertion;
-	use WrappedResult;
-
-	public function getClean(): ActiveLeaf {
-		$var = [];
-
-		foreach($this->_var as $name => $value) {
-			$var[$name] = $value;
-		}
-
-		return new ActiveLeaf([
-			'_chain'  => $this->_chain,
-			'_var'    => $var,
-			'_ref'    => $this->_ref,
-			'_class'  => $this->_class,
-			'_name'   => $this->_name,
-			'_result' => '',
-		]);
-	}
-}
-
-final class WrappedActiveLeafMap extends Leaf implements Wrapped {
-	use WrappedComponent;
-	use ReadyLeaf;
-	use InsertionMap;
-	use WrappedResult;
-
-	public function getClean(): ActiveLeafMap {
-		$var = [];
-
-		foreach($this->_var as $name => $value) {
-			$var[$name] = $value;
-		}
-
-		return new ActiveLeafMap([
-			'_chain'  => $this->_chain,
-			'_var'    => $var,
-			'_ref'    => $this->_ref,
-			'_class'  => $this->_class,
-			'_name'   => $this->_name,
-			'_result' => '',
-		]);
-	}
-}
-
-final class WrappedFixedLeaf extends DependentLeaf implements Fixed, Wrapped {
-	use WrappedComponent;
-	use Insertion;
-	use WrappedDependentResult;
-	use DependentLeafResult;
-
-	public function getActive(): ActiveLeaf {
-		$var = [];
-
-		foreach($this->_var as $name => $value) {
-			$var[$name] = $value;
-		}
-
-		return new ActiveLeaf([
-			'_chain'  => $this->_chain,
-			'_var'    => $var,
-			'_ref'    => $this->_ref,
-			'_class'  => $this->_class,
-			'_name'   => $this->_name,
-			'_result' => '',
-		]);
-	}
-
-	public function getClean(): ActiveLeaf {
-		return $this->getActive();
-	}}
-
-final class WrappedFixedLeafMap extends DependentLeaf implements Fixed, Wrapped {
-	use WrappedComponent;
-	use InsertionMap;
-	use WrappedDependentResult;
-	use DependentLeafResult;
-
-	public function getActive(): ActiveLeafMap {
-		$var = [];
-
-		foreach($this->_var as $name => $value) {
-			$var[$name] = $value;
-		}
-
-		return new ActiveLeafMap([
-			'_chain'  => $this->_chain,
-			'_var'    => $var,
-			'_ref'    => $this->_ref,
-			'_class'  => $this->_class,
-			'_name'   => $this->_name,
-			'_result' => '',
-		]);
-	}
-
-	public function getClean(): ActiveLeafMap {
-		return $this->getActive();
-	}
-}
-
-final class ActiveText extends Text {
-	use InsertionStub;
-	use ReadyText;
-	use Result;
-}
-
-final class FixedText extends DependentText implements Fixed {
-	use InsertionStub;
-	use DependentResult;
-	use DependentTextResult;
-
-	public function getActive(): ActiveText {
-		return new ActiveText([
-			'_text'   => $this->_text,
-			'_class'  => $this->_class,
-			'_name'   => $this->_name,
-			'_result' => '',
-		]);
-	}
-}
-
-final class WrappedActiveText extends Text implements Wrapped {
-	use WrappedComponent;
-	use ReadyText;
-	use InsertionStub;
-	use WrappedResult;
-
-	public function getClean(): ActiveText {
-		return new ActiveText([
-			'_text'   => $this->_text,
-			'_class'  => $this->_class,
-			'_name'   => $this->_name,
-			'_result' => '',
-		]);
-	}
-}
-
-final class WrappedFixedText extends DependentText implements Fixed, Wrapped {
-	use WrappedComponent;
-	use InsertionStub;
-	use WrappedDependentResult;
-	use DependentTextResult;
-
-	public function getActive(): ActiveText {
-		return new ActiveText([
-			'_text'   => $this->_text,
-			'_class'  => $this->_class,
-			'_name'   => $this->_name,
-			'_result' => '',
-		]);
-	}
-
-	public function getClean(): ActiveText {
-		return $this->getActive();
-	}
-}
-
-final class Variator extends Variant {
-	use ReadyVariant;
-	use Result;
-}
-
-final class WrappedVariator extends Variant implements Wrapped {
-	use WrappedComponent;
-	use ReadyVariant;
-	use WrappedResult;
-
-	public function getClean(): Variator {
-		$component = [];
-		
-		foreach (\array_keys($this->_component) as $name) {
-			$component[$name] = clone $this->_component[$name];
-		}
-
-		return new Variator([
-			'_class'     => $this->_class,
-			'_name'      => $this->_name,
-			'_component' => $component,
-			'_variant'   => $this->_variant,
-			'_result'    => '',
-		]);
 	}
 }
 
