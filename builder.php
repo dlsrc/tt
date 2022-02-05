@@ -74,14 +74,14 @@ final class Builder {
 			'wa_leaf_map' => __NAMESPACE__.'\\WrappedActiveLeafMap',
 			'wf_leaf'     => __NAMESPACE__.'\\WrappedFixedLeaf',
 			'wf_leaf_map' => __NAMESPACE__.'\\WrappedFixedLeafMap',
-			'a_fragment'  => __NAMESPACE__.'\\ActiveFragment',
-			'f_fragment'  => __NAMESPACE__.'\\FixedFragment',
-			'wa_fragment' => __NAMESPACE__.'\\WrappedActiveFragment',
-			'wf_fragment' => __NAMESPACE__.'\\WrappedFixedFragment',
+			'a_text'      => __NAMESPACE__.'\\ActiveText',
+			'f_text'      => __NAMESPACE__.'\\FixedText',
+			'wa_text'     => __NAMESPACE__.'\\WrappedActiveText',
+			'wf_text'     => __NAMESPACE__.'\\WrappedFixedText',
 			'variator'    => __NAMESPACE__.'\\Variator',
 			'w_variator'  => __NAMESPACE__.'\\WrappedVariator',
-			'text'        => __NAMESPACE__.'\\Text',
-			'document'    => __NAMESPACE__.'\\Document',
+			'text'        => __NAMESPACE__.'\\Document',
+			'document'    => __NAMESPACE__.'\\Complex',
 		];
 
 		$open  = \preg_quote($cfg->wrap_open, '/');
@@ -360,19 +360,19 @@ final class Builder {
 		for ($i = \array_key_last($this->types); $i >= 0; $i--) {
 			switch ($this->types[$i]) {
 			case $this->component['a_comp']:
-				$this->identifyType($i, 'a_leaf', 'a_fragment');
+				$this->identifyType($i, 'a_leaf', 'a_text');
 				break;
 
 			case $this->component['wa_comp']:
-				$this->identifyType($i, 'wa_leaf', 'wa_fragment');
+				$this->identifyType($i, 'wa_leaf', 'wa_text');
 				break;
 
 			case $this->component['f_comp']:
-				$this->identifyType($i, 'f_leaf', 'f_fragment');
+				$this->identifyType($i, 'f_leaf', 'f_text');
 				break;
 
 			case $this->component['wf_comp']:
-				$this->identifyType($i, 'wf_leaf', 'wf_fragment');
+				$this->identifyType($i, 'wf_leaf', 'wf_text');
 				break;
 
 			case $this->component['document']:
@@ -500,7 +500,7 @@ final class Builder {
 				]);
 				break;
 
-			case $this->component['a_fragment']:
+			case $this->component['a_text']:
 
 				$this->block[$i] = new $this->types[$i]([
 					'_text'  => $this->stack[$i][0],
@@ -509,7 +509,7 @@ final class Builder {
 				]);
 				break;
 
-			case $this->component['wa_fragment']:
+			case $this->component['wa_text']:
 
 				$this->block[$i] = new $this->types[$i]([
 					'_text'   => $this->stack[$i][0],
@@ -520,7 +520,7 @@ final class Builder {
 				]);
 				break;
 
-			case $this->component['f_fragment']:
+			case $this->component['f_text']:
 
 				$this->block[$i] = new $this->types[$i]([
 					'_text'  => $this->stack[$i][0],
@@ -530,7 +530,7 @@ final class Builder {
 				]);
 				break;
 
-			case $this->component['wf_fragment']:
+			case $this->component['wf_text']:
 
 				$this->block[$i] = new $this->types[$i]([
 					'_text'   => $this->stack[$i][0],

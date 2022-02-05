@@ -142,7 +142,7 @@ final class Snippet {
 
 				self::$_snippet[$name] = $component;
 				(new \dl\Exporter($snippet))->save(self::$_snippet[$name]);
-				$cfg->root = __NAMESPACE__.'\\Document';
+				$cfg->root = __NAMESPACE__.'\\Complex';
 			}
 		}
 
