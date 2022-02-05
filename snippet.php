@@ -31,13 +31,17 @@ final class Snippet {
 			$name = $com->getClass();
 		}
 
-		self::$_snippet[$name] = clone $com;
-
-		if (self::$_snippet[$name] instanceof Wrapped) {
-			self::$_snippet[$name]->unwrap();
+		if ($com instanceof Derivative) {
+			self::$_snippet[$name] = $com->getOriginal();
 		}
+		else {
+			self::$_snippet[$name] = clone $com;
+			self::$_snippet[$name]->drop();
 
-		self::$_snippet[$name]->drop();
+			if (self::$_snippet[$name] instanceof Wrapped) {
+				self::$_snippet[$name]->unwrap();
+			}
+		}
 
 		if (!empty($vars)) {
 			self::prepare($name, $vars);
@@ -160,13 +164,18 @@ final class Snippet {
 
 		if (Page::exists() && Page::child($name)) {
 			$com = Page::open()->$name;
-			self::$_snippet[$name] = clone $com;
 
-			if (self::$_snippet[$name] instanceof Wrapped) {
-				self::$_snippet[$name]->unwrap();
+			if ($com instanceof Derivative) {
+				self::$_snippet[$name] = $com->getOriginal();
 			}
+			else {
+				self::$_snippet[$name] = clone $com;
+				self::$_snippet[$name]->drop();
 
-			self::$_snippet[$name]->drop();
+				if (self::$_snippet[$name] instanceof Wrapped) {
+					self::$_snippet[$name]->unwrap();
+				}
+			}
 
 			if (!empty($vars)) {
 				self::prepare($name, $vars);
