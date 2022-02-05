@@ -29,7 +29,6 @@ final class Builder {
 	private array $ref;
 	private array $var;
 	private array $child;
-	private int   $size;
 	private array $globs;
 	private array $before;
 	private array $after;
@@ -124,7 +123,6 @@ final class Builder {
 		$this->globs  = [];
 		$this->before = [];
 		$this->after  = [];
-		$this->size   = 0;
 	}
 
 	private function prepareGlobalVars(): void {
@@ -250,14 +248,12 @@ final class Builder {
 				$k++;
 			}
 		}
-
-		$this->size = \sizeof($this->block);
 	}
 
 	private function prepareStacks(): void {
 		$refns  = Config::get()->refns;
 
-		for ($i = 0; $i < $this->size; $i++) {
+		foreach (\array_keys($this->block) as $i) {
 			$key = 0;
 			$this->ref[$i] = [];
 			$this->ref[$i]['var'] = [];
