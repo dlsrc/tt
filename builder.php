@@ -325,21 +325,37 @@ final class Builder {
 		}
 	}
 
-	private function identifyType(int $id, string $leaf, string $fragment): void {
+	private function identifyType(int $id, string $prefix): void {
 		if (!isset($this->child[$id][0])) {
 			if (empty($this->ref[$id]['var']) && empty($this->ref[$id]['com']) && isset($this->stack[$id][0]) && 1 == \count($this->stack[$id])) {
-				$this->types[$id] = $this->component[$fragment];
+				$comp = $prefix.'_text';
+				$this->types[$id] = $this->component[$comp];
 				return;
 			}
 
-			$this->types[$id] = $this->component[$leaf];
+			$leaf = true;
+		}
+		else {
+			$leaf = false;
 		}
 
-		foreach (\array_keys($this->stack[$id]) as $var) {
-			if (\is_string($var) && \str_contains($var, Component::NS) && Component::NS != $var[0]) {
-				$this->types[$id] = $this->types[$id].'Map';
-				break;
+		foreach (\array_keys($this->var[$id]) as $name) {
+			if (\str_contains($name, Component::NS)) {
+				if ($leaf) {
+					$comp = $prefix.'_leaf_map';
+				}
+				else {
+					$comp = $prefix.'_comp_map';
+				}
+
+				$this->types[$id] = $this->component[$comp];
+				return;
 			}
+		}
+
+		if ($leaf) {
+			$comp = $prefix.'_leaf';
+			$this->types[$id] = $this->component[$comp];
 		}
 	}
 
@@ -360,19 +376,19 @@ final class Builder {
 		for ($i = \array_key_last($this->types); $i >= 0; $i--) {
 			switch ($this->types[$i]) {
 			case $this->component['a_comp']:
-				$this->identifyType($i, 'a_leaf', 'a_text');
+				$this->identifyType($i, 'a');
 				break;
 
 			case $this->component['wa_comp']:
-				$this->identifyType($i, 'wa_leaf', 'wa_text');
+				$this->identifyType($i, 'wa');
 				break;
 
 			case $this->component['f_comp']:
-				$this->identifyType($i, 'f_leaf', 'f_text');
+				$this->identifyType($i, 'f');
 				break;
 
 			case $this->component['wf_comp']:
-				$this->identifyType($i, 'wf_leaf', 'wf_text');
+				$this->identifyType($i, 'wf');
 				break;
 
 			case $this->component['document']:
