@@ -986,7 +986,7 @@ final class Document extends Leaf {
 	use IndependentComponent;
 
 	public function ready(): void {
-		$this->_result.= \implode('', $this->_chain);
+		$this->_result = \implode('', $this->_chain);
 	}
 }
 
