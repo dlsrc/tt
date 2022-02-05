@@ -24,7 +24,7 @@
 	trait Sequence
 	trait DependentComponent
 	trait IndependentComponent
-	trait ReadyComponent         use IndependentComponent
+	trait ReadyComposite         use IndependentComponent
 	trait ReadyVariant           use IndependentComponent
 	trait WrappedComponent
 	trait RootComponent
@@ -37,22 +37,22 @@
 	trait DependentResult        use DependentRawResult
 	trait WrappedDependentResult use DependentRawResult
 
-	final class ActiveComposite           extends Performer          use Insertion, ReadyComponent, Result
-	final class ActiveCompositeMap        extends Performer          use InsertionMap, ReadyComponent, Result
+	final class ActiveComposite           extends Performer          use Insertion, ReadyComposite, Result
+	final class ActiveCompositeMap        extends Performer          use InsertionMap, ReadyComposite, Result
 	final class FixedComposite            extends DependentPerformer use Insertion, DependentResult
 	final class FixedCompositeMap         extends DependentPerformer use InsertionMap, DependentResult
 	final class Document                  extends Performer          use RootComponent, IndependentComponent
-	final class WrappedActiveComposite    extends Performer          use WrappedComponent, ReadyComponent, Insertion, WrappedResult
-	final class WrappedActiveCompositeMap extends Performer          use WrappedComponent, ReadyComponent, InsertionMap, WrappedResult
+	final class WrappedActiveComposite    extends Performer          use WrappedComponent, ReadyComposite, Insertion, WrappedResult
+	final class WrappedActiveCompositeMap extends Performer          use WrappedComponent, ReadyComposite, InsertionMap, WrappedResult
 	final class WrappedFixedComposite     extends DependentPerformer use WrappedComponent, Insertion, WrappedDependentResult
 	final class WrappedFixedCompositeMap  extends DependentPerformer use WrappedComponent, InsertionMap, WrappedDependentResult
-	final class ActiveLeaf                extends Leaf               use Insertion, ReadyComponent, Result
-	final class ActiveLeafMap             extends Leaf               use InsertionMap, ReadyComponent Result
+	final class ActiveLeaf                extends Leaf               use Insertion, ReadyLeaf, Result
+	final class ActiveLeafMap             extends Leaf               use InsertionMap, ReadyLeaf Result
 	final class FixedLeaf                 extends DependentLeaf      use Insertion, DependentResult
 	final class FixedLeafMap              extends DependentLeaf      use InsertionMap, DependentResult
 	final class Text                      extends Leaf               use RootComponent, IndependentComponent
-	final class WrappedActiveLeaf         extends Leaf               use WrappedComponent, ReadyComponent, Insertion, WrappedResult
-	final class WrappedActiveLeafMap      extends Leaf               use WrappedComponent, ReadyComponent, InsertionMap, WrappedResult
+	final class WrappedActiveLeaf         extends Leaf               use WrappedComponent, ReadyLeaf, Insertion, WrappedResult
+	final class WrappedActiveLeafMap      extends Leaf               use WrappedComponent, ReadyLeaf, InsertionMap, WrappedResult
 	final class WrappedFixedLeaf          extends DependentLeaf      use WrappedComponent, Insertion, WrappedDependentResult
 	final class WrappedFixedLeafMap       extends DependentLeaf      use WrappedComponent, InsertionMap, WrappedDependentResult
 	final class Variator                  extends Variant            use ReadyVariant, Result
@@ -69,6 +69,11 @@ namespace dl\tt;
 
 interface Wrapped {
 	public function unwrap(): void;
+}
+
+interface Derivative {
+	public function getOriginal(): Component;
+	public function getOriginalClass(): string;
 }
 
 abstract class Component implements \dl\DirectCallable {
@@ -90,7 +95,6 @@ abstract class Component implements \dl\DirectCallable {
 	abstract public function insert(string $text): void;
 	abstract public function common(string $name, string|int|float $value): void;
 	abstract public function ready(): void;
-	abstract protected function notify(): void;
 
     protected string $_name;
     protected string $_class;
@@ -216,14 +220,6 @@ abstract class Composite extends Component {
 
 		return $names;
 	}
-
-	final protected function notify(): void {
-		foreach ($this->_component as $component) {
-			$name = Component::NS.$component->getName();
-			$this->_chain[$name] = $component->getResult();
-			$component->update();
-		}
-	}
 }
 
 abstract class Variant extends Composite {
@@ -278,20 +274,14 @@ abstract class Variant extends Composite {
 }
 
 trait Sequence {
-    //protected array $_var;
-	protected array $_ref;
+ 	protected array $_ref;
 	protected array $_chain;
 
 	public function __construct(array $state) {
 		parent::__construct($state);
-        //$this->_var   = $state['_var'];
         $this->_ref   = $state['_ref'];
         $this->_chain = $state['_chain'];
-/*
-		foreach ($this->_ref as $i => $name) {
-			$this->_chain[$i] =&$this->_var[$name];
-		}
-*/
+
 		foreach ($this->_ref as $k => $v) {
 			$this->_chain[$k] =&$this->_chain[$v];
 		}
@@ -342,8 +332,6 @@ abstract class Leaf extends Component {
 			$this->_chain[$name] = $value;
 		}
 	}
-
-	final protected function notify(): void {}
 }
 
 abstract class Performer extends Composite {
@@ -390,6 +378,14 @@ abstract class Performer extends Composite {
 			$component->common($name, $value);
 		}
 	}
+
+	final protected function notify(): void {
+		foreach ($this->_component as $component) {
+			$name = Component::NS.$component->getName();
+			$this->_chain[$name] = $component->getResult();
+			$component->update();
+		}
+	}
 }
 
 trait DependentComponent {
@@ -419,11 +415,19 @@ trait IndependentComponent {
 	}
 }
 
-trait ReadyComponent {
+trait ReadyComposite {
 	use IndependentComponent;
 
 	public function ready(): void {
 		$this->notify();
+		$this->_result.= \implode('', $this->_chain);
+	}
+}
+
+trait ReadyLeaf {
+	use IndependentComponent;
+
+	public function ready(): void {
 		$this->_result.= \implode('', $this->_chain);
 	}
 }
@@ -463,31 +467,6 @@ trait WrappedComponent {
 }
 
 trait RootComponent {
-	protected array  $_global;
-	protected string $_first;
-	protected string $_last;
-
-	public function __construct(array $state) {
-		parent::__construct($state);
-		$this->_global = $state['_global'];
-		$this->_first  = $state['_first'];
-		$this->_last   = $state['_last'];
-	}
-
-	final public function __set(string $name, int|float|string|array $value): void {
-		if (\is_array($value)) {
-			foreach ($value as $key => $val) {
-				$this->__set($name.Component::NS.$key, $val);
-			}
-		}
-		elseif (isset($this->_chain[$name])) {
-			$this->_chain[$name] = $value;
-		}
-		else {
-			$this->_global[$this->_first.$name.$this->_last] = $value;
-		}
-	}
-
 	final public function __toString(): string {
 		$this->ready();
 		return $this->_result;
@@ -504,21 +483,6 @@ trait RootComponent {
 
 	final public function insert(string $text): void {
 		return;
-	}
-
-	final public function ready(): void {
-		if ('' == $this->_result) {
-			$this->notify();
-			$this->_result = \implode('', $this->_chain);
-			
-			if (!empty($this->_global)) {
-				$this->_result = \str_replace(
-					\array_keys($this->_global),
-					$this->_global,
-					$this->_result
-				);
-			}
-		}
 	}
 }
 
@@ -622,13 +586,13 @@ trait WrappedDependentResult {
 
 final class ActiveComposite extends Performer {
 	use Insertion;
-	use ReadyComponent;
+	use ReadyComposite;
 	use Result;
 }
 
 final class ActiveCompositeMap extends Performer {
 	use InsertionMap;
-	use ReadyComponent;
+	use ReadyComposite;
 	use Result;
 }
 
@@ -642,30 +606,16 @@ final class FixedCompositeMap extends DependentPerformer {
 	use DependentResult;
 }
 
-final class Document extends Performer {
-	use RootComponent;
-	use IndependentComponent;
-
-	final public function force(string $name, string $text): bool {
-		if (!isset($this->_component[$name])) {
-			return false;
-		}
-
-		$this->_component[$name]->insert($text);
-		return true;
-	}
-}
-
 final class WrappedActiveComposite extends Performer implements Wrapped {
 	use WrappedComponent;
-	use ReadyComponent;
+	use ReadyComposite;
 	use Insertion;
 	use WrappedResult;
 }
 
 final class WrappedActiveCompositeMap extends Performer implements Wrapped {
 	use WrappedComponent;
-	use ReadyComponent;
+	use ReadyComposite;
 	use InsertionMap;
 	use WrappedResult;
 }
@@ -684,13 +634,13 @@ final class WrappedFixedCompositeMap extends DependentPerformer implements Wrapp
 
 final class ActiveLeaf extends Leaf {
 	use Insertion;
-	use ReadyComponent;
+	use ReadyLeaf;
 	use Result;
 }
 
 final class ActiveLeafMap extends Leaf {
 	use InsertionMap;
-	use ReadyComponent;
+	use ReadyLeaf;
 	use Result;
 }
 
@@ -704,21 +654,16 @@ final class FixedLeafMap extends DependentLeaf {
 	use DependentResult;
 }
 
-final class Text extends Leaf {
-	use RootComponent;
-	use IndependentComponent;
-}
-
 final class WrappedActiveLeaf extends Leaf implements Wrapped {
 	use WrappedComponent;
-	use ReadyComponent;
+	use ReadyLeaf;
 	use Insertion;
 	use WrappedResult;
 }
 
 final class WrappedActiveLeafMap extends Leaf implements Wrapped {
 	use WrappedComponent;
-	use ReadyComponent;
+	use ReadyLeaf;
 	use InsertionMap;
 	use WrappedResult;
 }
@@ -746,6 +691,70 @@ final class WrappedVariator extends Variant implements Wrapped {
 	use WrappedResult;
 }
 
+final class Complex extends Performer {
+	use RootComponent;
+	use IndependentComponent;
+
+	protected array  $_global;
+	protected string $_first;
+	protected string $_last;
+
+	public function __construct(array $state) {
+		parent::__construct($state);
+		$this->_global = $state['_global'];
+		$this->_first  = $state['_first'];
+		$this->_last   = $state['_last'];
+	}
+
+	final public function __set(string $name, int|float|string|array $value): void {
+		if (\is_array($value)) {
+			foreach ($value as $key => $val) {
+				$this->__set($name.Component::NS.$key, $val);
+			}
+		}
+		elseif (isset($this->_chain[$name])) {
+			$this->_chain[$name] = $value;
+		}
+		else {
+			$this->_global[$this->_first.$name.$this->_last] = $value;
+		}
+	}
+
+	final public function ready(): void {
+		if ('' == $this->_result) {
+			$this->notify();
+			$this->_result = \implode('', $this->_chain);
+			
+			if (!empty($this->_global)) {
+				$this->_result = \str_replace(
+					\array_keys($this->_global),
+					$this->_global,
+					$this->_result
+				);
+			}
+		}
+	}
+
+	final public function force(string $name, string $text): bool {
+		if (!isset($this->_component[$name])) {
+			return false;
+		}
+
+		$this->_component[$name]->insert($text);
+		return true;
+	}
+}
+
+final class Document extends Leaf {
+	use InsertionMap;
+	use RootComponent;
+	use IndependentComponent;
+
+	public function ready(): void {
+		$this->_result = \implode('', $this->_chain);
+	}
+}
+
 final class Emulator extends Component implements Wrapped {
 	public function drop(): void {}
 	public function isComponent(string $name): bool {return false;}
@@ -764,7 +773,6 @@ final class Emulator extends Component implements Wrapped {
 	public function unwrap(): void {}
 	public function common(string $name, array|string|int|float $value): void {}
 	public function ready(): void {}
-	protected function notify(): void {}
 	public function __toString(): string {return '';}
 	public function force(string $name, string $text): bool {return true;}
 }

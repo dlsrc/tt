@@ -75,8 +75,8 @@ final class Builder {
 			'wf_leaf_map' => __NAMESPACE__.'\\WrappedFixedLeafMap',
 			'variator'    => __NAMESPACE__.'\\Variator',
 			'w_variator'  => __NAMESPACE__.'\\WrappedVariator',
-			'text'        => __NAMESPACE__.'\\Text',
-			'document'    => __NAMESPACE__.'\\Document',
+			'text'        => __NAMESPACE__.'\\Document',
+			'document'    => __NAMESPACE__.'\\Complex',
 		];
 
 		$open  = \preg_quote($cfg->wrap_open, '/');
