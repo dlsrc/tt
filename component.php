@@ -410,20 +410,11 @@ trait DependentComponent {
 	public function ready(): void {
 		$this->_exert = true;
 	}
-		
-	final public function insert(string $text): void {
-		$this->_result = $text;
-		$this->_exert = false;
-	}
 }
 
 trait IndependentComponent {
 	public function isReady(): bool {
 		return '' != $this->_result;
-	}
-
-	public function insert(string $text): void {
-		$this->_result.= $text;
 	}
 }
 
@@ -506,31 +497,6 @@ trait WrappedComponent {
 }
 
 trait RootComponent {
-	protected array  $_global;
-	protected string $_first;
-	protected string $_last;
-
-	public function __construct(array $state) {
-		parent::__construct($state);
-		$this->_global = $state['_global'];
-		$this->_first  = $state['_first'];
-		$this->_last   = $state['_last'];
-	}
-
-	final public function __set(string $name, int|float|string|array $value): void {
-		if (\is_array($value)) {
-			foreach ($value as $key => $val) {
-				$this->__set($name.Component::NS.$key, $val);
-			}
-		}
-		elseif (isset($this->_chain[$name])) {
-			$this->_chain[$name] = $value;
-		}
-		else {
-			$this->_global[$this->_first.$name.$this->_last] = $value;
-		}
-	}
-
 	final public function __toString(): string {
 		$this->ready();
 		return $this->_result;
@@ -546,21 +512,6 @@ trait RootComponent {
 	}
 
 	final public function insert(string $text): void {}
-
-	final public function ready(): void {
-		if ('' == $this->_result) {
-			$this->notify();
-			$this->_result = \implode('', $this->_chain);
-			
-			if (!empty($this->_global)) {
-				$this->_result = \str_replace(
-					\array_keys($this->_global),
-					$this->_global,
-					$this->_result
-				);
-			}
-		}
-	}
 }
 
 trait Insertion {
@@ -592,6 +543,10 @@ trait RawResult {
 	final public function getRawResult(): string {
 		return $this->_result;
 	}
+
+	public function insert(string $text): void {
+		$this->_result.= $text;
+	}
 }
 
 trait Result {
@@ -611,6 +566,13 @@ trait WrappedResult {
 		}
 
 		return '';
+	}
+}
+
+trait DependentInsert {
+	final public function insert(string $text): void {
+		$this->_result = $text;
+		$this->_exert = false;
 	}
 }
 
@@ -649,6 +611,8 @@ trait DependentRawText {
 }
 
 trait DependentResult {
+	use DependentInsert;
+
 	final public function getResult(): string {
 		if ($result = $this->getRawResult()) {
 			$this->_result = '';
@@ -660,6 +624,8 @@ trait DependentResult {
 }
 
 trait WrappedDependentResult {
+	use DependentInsert;
+
 	final public function getResult(): string {
 		if ($result = $this->getRawResult()) {
 			$this->_result = '';
@@ -812,8 +778,47 @@ final class WrappedVariator extends Variant implements Wrapped {
 }
 
 final class Complex extends Performer {
-	use RootComponent, IndependentComponent {
-		RootComponent::insert insteadof IndependentComponent;
+	use RootComponent;
+	use IndependentComponent;
+
+	protected array  $_global;
+	protected string $_first;
+	protected string $_last;
+
+	public function __construct(array $state) {
+		parent::__construct($state);
+		$this->_global = $state['_global'];
+		$this->_first  = $state['_first'];
+		$this->_last   = $state['_last'];
+	}
+
+	final public function __set(string $name, int|float|string|array $value): void {
+		if (\is_array($value)) {
+			foreach ($value as $key => $val) {
+				$this->__set($name.Component::NS.$key, $val);
+			}
+		}
+		elseif (isset($this->_chain[$name])) {
+			$this->_chain[$name] = $value;
+		}
+		else {
+			$this->_global[$this->_first.$name.$this->_last] = $value;
+		}
+	}
+
+	final public function ready(): void {
+		if ('' == $this->_result) {
+			$this->notify();
+			$this->_result = \implode('', $this->_chain);
+			
+			if (!empty($this->_global)) {
+				$this->_result = \str_replace(
+					\array_keys($this->_global),
+					$this->_global,
+					$this->_result
+				);
+			}
+		}
 	}
 
 	final public function force(string $name, string $text): bool {
@@ -827,8 +832,12 @@ final class Complex extends Performer {
 }
 
 final class Document extends Leaf {
-	use RootComponent, IndependentComponent {
-		RootComponent::insert insteadof IndependentComponent;
+	use InsertionMap;
+	use RootComponent;
+	use IndependentComponent;
+
+	public function ready(): void {
+		$this->_result = \implode('', $this->_chain);
 	}
 }
 
