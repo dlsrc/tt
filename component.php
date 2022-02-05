@@ -71,9 +71,9 @@ interface Wrapped {
 	public function unwrap(): void;
 }
 
-interface Activable {
-	public function getActive(): Component;
-	public function getActiveClass(): string;
+interface Derivative {
+	public function getOriginal(): Component;
+	public function getOriginalClass(): string;
 }
 
 abstract class Component implements \dl\DirectCallable {
@@ -689,7 +689,7 @@ trait WrappedDependentResult {
 }
 
 trait PerformerActivator {
-	public function getActive(): Performer {
+	public function getOriginal(): Performer {
 		$component = [];
 
 		foreach (\array_keys($this->_component) as $name) {
@@ -702,7 +702,7 @@ trait PerformerActivator {
 			$var[$name] = $value;
 		}
 
-		$class = $this->getActiveClass();
+		$class = $this->getOriginalClass();
 
 		return new $class([
 			'_chain'     => $this->_chain,
@@ -717,14 +717,14 @@ trait PerformerActivator {
 }
 
 trait LeafActivator {
-	public function getActive(): Leaf {
+	public function getOriginal(): Leaf {
 		$var = [];
 
 		foreach($this->_var as $name => $value) {
 			$var[$name] = $value;
 		}
 
-		$class = $this->getActiveClass();
+		$class = $this->getOriginalClass();
 
 		return new $class([
 			'_chain'  => $this->_chain,
@@ -737,11 +737,11 @@ trait LeafActivator {
 }
 
 trait TextActivator {
-	public function getActiveClass(): string {
+	public function getOriginalClass(): string {
 		return ActiveText::class;
 	}
 
-	public function getActive(): ActiveText {
+	public function getOriginal(): ActiveText {
 		return new ActiveText([
 			'_text'   => $this->_text,
 			'_class'  => $this->_class,
@@ -762,72 +762,72 @@ final class ActiveCompositeMap extends Performer {
 	use Result;
 }
 
-final class FixedComposite extends DependentPerformer implements Activable {
+final class FixedComposite extends DependentPerformer implements Derivative {
 	use Insertion;
 	use DependentResult;
 	use DependentCompositeResult;
 	use PerformerActivator;
 
-	public function getActiveClass(): string {
+	public function getOriginalClass(): string {
 		return ActiveComposite::class;
 	}
 }
 
-final class FixedCompositeMap extends DependentPerformer implements Activable {
+final class FixedCompositeMap extends DependentPerformer implements Derivative {
 	use InsertionMap;
 	use DependentResult;
 	use DependentCompositeResult;
 	use PerformerActivator;
 
-	public function getActiveClass(): string {
+	public function getOriginalClass(): string {
 		return ActiveCompositeMap::class;
 	}
 }
 
-final class WrappedActiveComposite extends Performer implements Activable, Wrapped {
+final class WrappedActiveComposite extends Performer implements Derivative, Wrapped {
 	use WrappedComponent;
 	use ReadyComposite;
 	use Insertion;
 	use WrappedResult;
 	use PerformerActivator;
 
-	public function getActiveClass(): string {
+	public function getOriginalClass(): string {
 		return ActiveComposite::class;
 	}
 }
 
-final class WrappedActiveCompositeMap extends Performer implements Activable, Wrapped {
+final class WrappedActiveCompositeMap extends Performer implements Derivative, Wrapped {
 	use WrappedComponent;
 	use ReadyComposite;
 	use InsertionMap;
 	use WrappedResult;
 	use PerformerActivator;
 
-	public function getActiveClass(): string {
+	public function getOriginalClass(): string {
 		return ActiveCompositeMap::class;
 	}
 }
 
-final class WrappedFixedComposite extends DependentPerformer implements Activable, Wrapped {
+final class WrappedFixedComposite extends DependentPerformer implements Derivative, Wrapped {
 	use WrappedComponent;
 	use Insertion;
 	use WrappedDependentResult;
 	use DependentCompositeResult;
 	use PerformerActivator;
 
-	public function getActiveClass(): string {
+	public function getOriginalClass(): string {
 		return ActiveComposite::class;
 	}
 }
 
-final class WrappedFixedCompositeMap extends DependentPerformer implements Activable, Wrapped {
+final class WrappedFixedCompositeMap extends DependentPerformer implements Derivative, Wrapped {
 	use WrappedComponent;
 	use InsertionMap;
 	use WrappedDependentResult;
 	use DependentCompositeResult;
 	use PerformerActivator;
 
-	public function getActiveClass(): string {
+	public function getOriginalClass(): string {
 		return ActiveCompositeMap::class;
 	}
 }
@@ -844,72 +844,72 @@ final class ActiveLeafMap extends Leaf {
 	use Result;
 }
 
-final class FixedLeaf extends DependentLeaf implements Activable {
+final class FixedLeaf extends DependentLeaf implements Derivative {
 	use Insertion;
 	use DependentResult;
 	use DependentLeafResult;
 	use LeafActivator;
 
-	public function getActiveClass(): string {
+	public function getOriginalClass(): string {
 		return ActiveLeaf::class;
 	}
 }
 
-final class FixedLeafMap extends DependentLeaf implements Activable {
+final class FixedLeafMap extends DependentLeaf implements Derivative {
 	use InsertionMap;
 	use DependentResult;
 	use DependentLeafResult;
 	use LeafActivator;
 
-	public function getActiveClass(): string {
+	public function getOriginalClass(): string {
 		return ActiveLeafMap::class;
 	}
 }
 
-final class WrappedActiveLeaf extends Leaf implements Activable, Wrapped {
+final class WrappedActiveLeaf extends Leaf implements Derivative, Wrapped {
 	use WrappedComponent;
 	use ReadyLeaf;
 	use Insertion;
 	use WrappedResult;
 	use LeafActivator;
 
-	public function getActiveClass(): string {
+	public function getOriginalClass(): string {
 		return ActiveLeaf::class;
 	}
 }
 
-final class WrappedActiveLeafMap extends Leaf implements Activable, Wrapped {
+final class WrappedActiveLeafMap extends Leaf implements Derivative, Wrapped {
 	use WrappedComponent;
 	use ReadyLeaf;
 	use InsertionMap;
 	use WrappedResult;
 	use LeafActivator;
 
-	public function getActiveClass(): string {
+	public function getOriginalClass(): string {
 		return ActiveLeafMap::class;
 	}
 }
 
-final class WrappedFixedLeaf extends DependentLeaf implements Activable, Wrapped {
+final class WrappedFixedLeaf extends DependentLeaf implements Derivative, Wrapped {
 	use WrappedComponent;
 	use Insertion;
 	use WrappedDependentResult;
 	use DependentLeafResult;
 	use LeafActivator;
 
-	public function getActiveClass(): string {
+	public function getOriginalClass(): string {
 		return ActiveLeaf::class;
 	}
 }
 
-final class WrappedFixedLeafMap extends DependentLeaf implements Activable, Wrapped {
+final class WrappedFixedLeafMap extends DependentLeaf implements Derivative, Wrapped {
 	use WrappedComponent;
 	use InsertionMap;
 	use WrappedDependentResult;
 	use DependentLeafResult;
 	use LeafActivator;
 
-	public function getActiveClass(): string {
+	public function getOriginalClass(): string {
 		return ActiveLeafMap::class;
 	}
 }
@@ -920,14 +920,14 @@ final class ActiveText extends Text {
 	use Result;
 }
 
-final class FixedText extends DependentText implements Activable {
+final class FixedText extends DependentText implements Derivative {
 	use InsertionStub;
 	use DependentResult;
 	use DependentTextResult;
 	use TextActivator;
 }
 
-final class WrappedActiveText extends Text implements Activable, Wrapped {
+final class WrappedActiveText extends Text implements Derivative, Wrapped {
 	use WrappedComponent;
 	use ReadyText;
 	use InsertionStub;
@@ -935,7 +935,7 @@ final class WrappedActiveText extends Text implements Activable, Wrapped {
 	use TextActivator;
 }
 
-final class WrappedFixedText extends DependentText implements Activable, Wrapped {
+final class WrappedFixedText extends DependentText implements Derivative, Wrapped {
 	use WrappedComponent;
 	use InsertionStub;
 	use WrappedDependentResult;
@@ -948,16 +948,16 @@ final class Variator extends Variant {
 	use Result;
 }
 
-final class WrappedVariator extends Variant implements Activable, Wrapped {
+final class WrappedVariator extends Variant implements Derivative, Wrapped {
 	use WrappedComponent;
 	use ReadyVariant;
 	use WrappedResult;
 
-	public function getActiveClass(): string {
+	public function getOriginalClass(): string {
 		return Variator::class;
 	}
 
-	public function getActive(): Variator {
+	public function getOriginal(): Variator {
 		$component = [];
 		
 		foreach (\array_keys($this->_component) as $name) {

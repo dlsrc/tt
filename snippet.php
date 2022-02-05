@@ -31,8 +31,8 @@ final class Snippet {
 			$name = $com->getClass();
 		}
 
-		if ($com instanceof Activable) {
-			self::$_snippet[$name] = $com->getActive();
+		if ($com instanceof Derivative) {
+			self::$_snippet[$name] = $com->getOriginal();
 		}
 		else {
 			self::$_snippet[$name] = clone $com;
@@ -165,8 +165,8 @@ final class Snippet {
 		if (Page::exists() && Page::child($name)) {
 			$com = Page::open()->$name;
 
-			if ($com instanceof Activable) {
-				self::$_snippet[$name] = $com->getActive();
+			if ($com instanceof Derivative) {
+				self::$_snippet[$name] = $com->getOriginal();
 			}
 			else {
 				self::$_snippet[$name] = clone $com;
