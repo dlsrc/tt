@@ -73,7 +73,6 @@ interface Wrapped {
 
 interface Derivative {
 	public function getOriginal(): Component;
-	public function getOriginalClass(): string;
 }
 
 abstract class Component implements \dl\DirectCallable {
@@ -702,7 +701,12 @@ trait PerformerActivator {
 			$var[$name] = $value;
 		}
 
-		$class = $this->getOriginalClass();
+		if (\str_ends_with(__CLASS__, 'Map')) {
+			$class = ActiveCompositeMap::class;
+		}
+		else {
+			$class = ActiveComposite::class;
+		}
 
 		return new $class([
 			'_chain'     => $this->_chain,
@@ -724,7 +728,12 @@ trait LeafActivator {
 			$var[$name] = $value;
 		}
 
-		$class = $this->getOriginalClass();
+		if (\str_ends_with(__CLASS__, 'Map')) {
+			$class = ActiveLeafMap::class;
+		}
+		else {
+			$class = ActiveLeaf::class;
+		}
 
 		return new $class([
 			'_chain'  => $this->_chain,
@@ -737,10 +746,6 @@ trait LeafActivator {
 }
 
 trait TextActivator {
-	public function getOriginalClass(): string {
-		return ActiveText::class;
-	}
-
 	public function getOriginal(): ActiveText {
 		return new ActiveText([
 			'_text'   => $this->_text,
@@ -767,10 +772,6 @@ final class FixedComposite extends DependentPerformer implements Derivative {
 	use DependentResult;
 	use DependentCompositeResult;
 	use PerformerActivator;
-
-	public function getOriginalClass(): string {
-		return ActiveComposite::class;
-	}
 }
 
 final class FixedCompositeMap extends DependentPerformer implements Derivative {
@@ -778,10 +779,6 @@ final class FixedCompositeMap extends DependentPerformer implements Derivative {
 	use DependentResult;
 	use DependentCompositeResult;
 	use PerformerActivator;
-
-	public function getOriginalClass(): string {
-		return ActiveCompositeMap::class;
-	}
 }
 
 final class WrappedActiveComposite extends Performer implements Derivative, Wrapped {
@@ -790,10 +787,6 @@ final class WrappedActiveComposite extends Performer implements Derivative, Wrap
 	use Insertion;
 	use WrappedResult;
 	use PerformerActivator;
-
-	public function getOriginalClass(): string {
-		return ActiveComposite::class;
-	}
 }
 
 final class WrappedActiveCompositeMap extends Performer implements Derivative, Wrapped {
@@ -802,10 +795,6 @@ final class WrappedActiveCompositeMap extends Performer implements Derivative, W
 	use InsertionMap;
 	use WrappedResult;
 	use PerformerActivator;
-
-	public function getOriginalClass(): string {
-		return ActiveCompositeMap::class;
-	}
 }
 
 final class WrappedFixedComposite extends DependentPerformer implements Derivative, Wrapped {
@@ -814,10 +803,6 @@ final class WrappedFixedComposite extends DependentPerformer implements Derivati
 	use WrappedDependentResult;
 	use DependentCompositeResult;
 	use PerformerActivator;
-
-	public function getOriginalClass(): string {
-		return ActiveComposite::class;
-	}
 }
 
 final class WrappedFixedCompositeMap extends DependentPerformer implements Derivative, Wrapped {
@@ -826,10 +811,6 @@ final class WrappedFixedCompositeMap extends DependentPerformer implements Deriv
 	use WrappedDependentResult;
 	use DependentCompositeResult;
 	use PerformerActivator;
-
-	public function getOriginalClass(): string {
-		return ActiveCompositeMap::class;
-	}
 }
 
 final class ActiveLeaf extends Leaf {
@@ -849,10 +830,6 @@ final class FixedLeaf extends DependentLeaf implements Derivative {
 	use DependentResult;
 	use DependentLeafResult;
 	use LeafActivator;
-
-	public function getOriginalClass(): string {
-		return ActiveLeaf::class;
-	}
 }
 
 final class FixedLeafMap extends DependentLeaf implements Derivative {
@@ -860,10 +837,6 @@ final class FixedLeafMap extends DependentLeaf implements Derivative {
 	use DependentResult;
 	use DependentLeafResult;
 	use LeafActivator;
-
-	public function getOriginalClass(): string {
-		return ActiveLeafMap::class;
-	}
 }
 
 final class WrappedActiveLeaf extends Leaf implements Derivative, Wrapped {
@@ -872,10 +845,6 @@ final class WrappedActiveLeaf extends Leaf implements Derivative, Wrapped {
 	use Insertion;
 	use WrappedResult;
 	use LeafActivator;
-
-	public function getOriginalClass(): string {
-		return ActiveLeaf::class;
-	}
 }
 
 final class WrappedActiveLeafMap extends Leaf implements Derivative, Wrapped {
@@ -884,10 +853,6 @@ final class WrappedActiveLeafMap extends Leaf implements Derivative, Wrapped {
 	use InsertionMap;
 	use WrappedResult;
 	use LeafActivator;
-
-	public function getOriginalClass(): string {
-		return ActiveLeafMap::class;
-	}
 }
 
 final class WrappedFixedLeaf extends DependentLeaf implements Derivative, Wrapped {
@@ -896,10 +861,6 @@ final class WrappedFixedLeaf extends DependentLeaf implements Derivative, Wrappe
 	use WrappedDependentResult;
 	use DependentLeafResult;
 	use LeafActivator;
-
-	public function getOriginalClass(): string {
-		return ActiveLeaf::class;
-	}
 }
 
 final class WrappedFixedLeafMap extends DependentLeaf implements Derivative, Wrapped {
@@ -908,10 +869,6 @@ final class WrappedFixedLeafMap extends DependentLeaf implements Derivative, Wra
 	use WrappedDependentResult;
 	use DependentLeafResult;
 	use LeafActivator;
-
-	public function getOriginalClass(): string {
-		return ActiveLeafMap::class;
-	}
 }
 
 final class ActiveText extends Text {
@@ -952,10 +909,6 @@ final class WrappedVariator extends Variant implements Derivative, Wrapped {
 	use WrappedComponent;
 	use ReadyVariant;
 	use WrappedResult;
-
-	public function getOriginalClass(): string {
-		return Variator::class;
-	}
 
 	public function getOriginal(): Variator {
 		$component = [];
