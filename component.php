@@ -87,7 +87,7 @@ abstract class Component implements \dl\DirectCallable {
 	abstract public function __get(string $name): Component;
 	abstract public function __isset(string $name): bool;
 	abstract public function __unset(string $name): void;
-	abstract public function __set(string $name, string|int|float $value): void;
+	//abstract public function __set(string $name, string|int|float $value): void;
 	abstract public function getResult(): string;
 	abstract public function getRawResult(): string;
 	abstract public function isReady(): bool;
@@ -573,6 +573,14 @@ trait Insertion {
 	}
 }
 
+trait InsertionList {
+	final public function __set(string $name, array $value): void {
+		foreach ($value as $key => $val) {
+			$this->_var[$name.Component::NS.$key] = $value;
+		}
+	}
+}
+
 trait InsertionMap {
 	final public function __set(string $name, int|float|string|array $value): void {
 		if (\is_array($value)) {
@@ -757,6 +765,12 @@ trait TextActivator {
 
 final class ActiveComposite extends Performer {
 	use Insertion;
+	use ReadyComposite;
+	use Result;
+}
+
+final class ActiveCompositeList extends Performer {
+	use InsertionList;
 	use ReadyComposite;
 	use Result;
 }
