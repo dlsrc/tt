@@ -57,30 +57,30 @@ final class Builder {
 		$cfg = Config::get();
 
 		$this->component = [
-			'a_comp'      => __NAMESPACE__.'\\ActiveComposite',
-			'a_comp_map'  => __NAMESPACE__.'\\ActiveCompositeMap',
+			'a_comp'      => __NAMESPACE__.'\\OriginalComposite',
+			'a_comp_map'  => __NAMESPACE__.'\\OriginalCompositeMap',
 			'f_comp'      => __NAMESPACE__.'\\FixedComposite',
 			'f_comp_map'  => __NAMESPACE__.'\\FixedCompositeMap',
-			'wa_comp'     => __NAMESPACE__.'\\WrappedActiveComposite',
-			'wa_comp_map' => __NAMESPACE__.'\\WrappedActiveCompositeMap',
+			'wa_comp'     => __NAMESPACE__.'\\WrappedOriginalComposite',
+			'wa_comp_map' => __NAMESPACE__.'\\WrappedOriginalCompositeMap',
 			'wf_comp'     => __NAMESPACE__.'\\WrappedFixedComposite',
 			'wf_comp_map' => __NAMESPACE__.'\\WrappedFixedCompositeMap',
-			'a_leaf'      => __NAMESPACE__.'\\ActiveLeaf',
-			'a_leaf_map'  => __NAMESPACE__.'\\ActiveLeafMap',
+			'a_leaf'      => __NAMESPACE__.'\\OriginalLeaf',
+			'a_leaf_map'  => __NAMESPACE__.'\\OriginalLeafMap',
 			'f_leaf'      => __NAMESPACE__.'\\FixedLeaf',
 			'f_leaf_map'  => __NAMESPACE__.'\\FixedLeafMap',
-			'wa_leaf'     => __NAMESPACE__.'\\WrappedActiveLeaf',
-			'wa_leaf_map' => __NAMESPACE__.'\\WrappedActiveLeafMap',
+			'wa_leaf'     => __NAMESPACE__.'\\WrappedOriginalLeaf',
+			'wa_leaf_map' => __NAMESPACE__.'\\WrappedOriginalLeafMap',
 			'wf_leaf'     => __NAMESPACE__.'\\WrappedFixedLeaf',
 			'wf_leaf_map' => __NAMESPACE__.'\\WrappedFixedLeafMap',
-			'a_text'      => __NAMESPACE__.'\\ActiveText',
+			'a_text'      => __NAMESPACE__.'\\OriginalText',
 			'f_text'      => __NAMESPACE__.'\\FixedText',
-			'wa_text'     => __NAMESPACE__.'\\WrappedActiveText',
+			'wa_text'     => __NAMESPACE__.'\\WrappedOriginalText',
 			'wf_text'     => __NAMESPACE__.'\\WrappedFixedText',
 			'variator'    => __NAMESPACE__.'\\Variator',
 			'w_variator'  => __NAMESPACE__.'\\WrappedVariator',
-			'text'        => __NAMESPACE__.'\\Document',
-			'document'    => __NAMESPACE__.'\\Complex',
+			'document'    => __NAMESPACE__.'\\Document',
+			'complex'     => __NAMESPACE__.'\\Complex',
 		];
 
 		$open  = \preg_quote($cfg->wrap_open, '/');
@@ -297,21 +297,37 @@ final class Builder {
 		}
 	}
 
-	private function identifyType(int $id, string $leaf, string $fragment): void {
+	private function identifyType(int $id, string $prefix): void {
 		if (!isset($this->child[$id][0])) {
-			if (1 == \count($this->stack[$id]) && isset($this->stack[$id][0])) {
-				$this->types[$id] = $this->component[$fragment];
+			if (empty($this->ref[$id]['var']) && empty($this->ref[$id]['com']) && isset($this->stack[$id][0]) && 1 == \count($this->stack[$id])) {
+				$comp = $prefix.'_text';
+				$this->types[$id] = $this->component[$comp];
 				return;
 			}
 
-			$this->types[$id] = $this->component[$leaf];
+			$leaf = true;
+		}
+		else {
+			$leaf = false;
 		}
 
 		foreach (\array_keys($this->stack[$id]) as $var) {
 			if (\is_string($var) && \str_contains($var, Component::NS) && Component::NS != $var[0]) {
-				$this->types[$id] = $this->types[$id].'Map';
-				break;
+				if ($leaf) {
+					$comp = $prefix.'_leaf_map';
+				}
+				else {
+					$comp = $prefix.'_comp_map';
+				}
+
+				$this->types[$id] = $this->component[$comp];
+				return;
 			}
+		}
+
+		if ($leaf) {
+			$comp = $prefix.'_leaf';
+			$this->types[$id] = $this->component[$comp];
 		}
 	}
 
@@ -332,24 +348,24 @@ final class Builder {
 		for ($i = \array_key_last($this->types); $i >= 0; $i--) {
 			switch ($this->types[$i]) {
 			case $this->component['a_comp']:
-				$this->identifyType($i, 'a_leaf', 'a_text');
+				$this->identifyType($i, 'a');
 				break;
 
 			case $this->component['wa_comp']:
-				$this->identifyType($i, 'wa_leaf', 'wa_text');
+				$this->identifyType($i, 'wa');
 				break;
 
 			case $this->component['f_comp']:
-				$this->identifyType($i, 'f_leaf', 'f_text');
+				$this->identifyType($i, 'f');
 				break;
 
 			case $this->component['wf_comp']:
-				$this->identifyType($i, 'wf_leaf', 'wf_text');
+				$this->identifyType($i, 'wf');
 				break;
 
-			case $this->component['document']:
+			case $this->component['complex']:
 				if (!isset($this->child[$i][0])) {
-					$this->types[$i] = $this->component['text'];
+					$this->types[$i] = $this->component['document'];
 				}
 
 				break;
@@ -534,7 +550,7 @@ final class Builder {
 
 				break;
 
-			case $this->component['document']:
+			case $this->component['complex']:
 				$this->block[$i] = new $this->types[$i]([
 					'_chain'     => $this->stack[$i],
 					'_ref'       => $this->ref[$i],
@@ -548,7 +564,7 @@ final class Builder {
 
 				break;
 
-			case $this->component['text']:
+			case $this->component['document']:
 				$this->block[$i] = new $this->types[$i]([
 					'_chain'  => $this->stack[$i],
 					'_ref'    => $this->ref[$i],
