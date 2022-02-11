@@ -37,22 +37,22 @@
 	trait DependentResult        use DependentRawResult
 	trait WrappedDependentResult use DependentRawResult
 
-	final class ActiveComposite           extends Performer          use Insertion, ReadyComponent, Result
-	final class ActiveCompositeMap        extends Performer          use InsertionMap, ReadyComponent, Result
+	final class OriginalComposite           extends Performer          use Insertion, ReadyComponent, Result
+	final class OriginalCompositeMap        extends Performer          use InsertionMap, ReadyComponent, Result
 	final class FixedComposite            extends DependentPerformer use Insertion, DependentResult
 	final class FixedCompositeMap         extends DependentPerformer use InsertionMap, DependentResult
 	final class Complex                   extends Performer          use RootComponent, IndependentComponent
-	final class WrappedActiveComposite    extends Performer          use WrappedComponent, ReadyComponent, Insertion, WrappedResult
-	final class WrappedActiveCompositeMap extends Performer          use WrappedComponent, ReadyComponent, InsertionMap, WrappedResult
+	final class WrappedOriginalComposite    extends Performer          use WrappedComponent, ReadyComponent, Insertion, WrappedResult
+	final class WrappedOriginalCompositeMap extends Performer          use WrappedComponent, ReadyComponent, InsertionMap, WrappedResult
 	final class WrappedFixedComposite     extends DependentPerformer use WrappedComponent, Insertion, WrappedDependentResult
 	final class WrappedFixedCompositeMap  extends DependentPerformer use WrappedComponent, InsertionMap, WrappedDependentResult
-	final class ActiveLeaf                extends Leaf               use Insertion, ReadyComponent, Result
-	final class ActiveLeafMap             extends Leaf               use InsertionMap, ReadyComponent Result
+	final class OriginalLeaf                extends Leaf               use Insertion, ReadyComponent, Result
+	final class OriginalLeafMap             extends Leaf               use InsertionMap, ReadyComponent Result
 	final class FixedLeaf                 extends DependentLeaf      use Insertion, DependentResult
 	final class FixedLeafMap              extends DependentLeaf      use InsertionMap, DependentResult
 	final class Document                  extends Leaf               use RootComponent, IndependentComponent
-	final class WrappedActiveLeaf         extends Leaf               use WrappedComponent, ReadyComponent, Insertion, WrappedResult
-	final class WrappedActiveLeafMap      extends Leaf               use WrappedComponent, ReadyComponent, InsertionMap, WrappedResult
+	final class WrappedOriginalLeaf         extends Leaf               use WrappedComponent, ReadyComponent, Insertion, WrappedResult
+	final class WrappedOriginalLeafMap      extends Leaf               use WrappedComponent, ReadyComponent, InsertionMap, WrappedResult
 	final class WrappedFixedLeaf          extends DependentLeaf      use WrappedComponent, Insertion, WrappedDependentResult
 	final class WrappedFixedLeafMap       extends DependentLeaf      use WrappedComponent, InsertionMap, WrappedDependentResult
 	final class Variator                  extends Variant            use ReadyVariant, Result
@@ -83,11 +83,12 @@ abstract class Component implements \dl\DirectCallable {
 	abstract public function getChild(string $class): Component;
 	abstract public function getChildName(string $class): string|null;
 	abstract public function getChildNames(string $class): array;
-	abstract public function __call(string $name, array $value): bool;
+	abstract public function __call(string $name, array $data): bool;
 	abstract public function __get(string $name): Component;
+	abstract public function __invoke(array $data, array $order=[]): void;
 	abstract public function __isset(string $name): bool;
-	abstract public function __unset(string $name): void;
 	abstract public function __set(string $name, string|int|float $value): void;
+	abstract public function __unset(string $name): void;
 	abstract public function getResult(): string;
 	abstract public function getRawResult(): string;
 	abstract public function isReady(): bool;
@@ -229,22 +230,26 @@ abstract class Variant extends Composite {
 		}
 	}
 
-	final public function __call(string $name, array $value): bool {
-		if (isset($this->_component[$name])) {
-			$this->_variant = $name;
+    public function __invoke(array $data, array $order=[]): void {
+		$this->_component[$this->_variant]($data, $order);
+    }
 
-			if (isset($value[0])) {
-				foreach ($value[0] as $key => $val) {
-					$this->_component[$name]->$key = $val;
-				}
+	final public function __call(string $name, array $data): bool {
+        if (!isset($this->_component[$name])) {
+    		Component::error(Info::message('e_no_child', $name), Code::Component);
+	    	return false;
+        }
 
-				$this->ready();
-			}
+		$this->_variant = $name;
 
-			return true;
-		}
+        if (isset($data[1])) {
+            $this->_component[$name]($data[0], $data[1]);
+        }
+        elseif (isset($data[0])) {
+            $this->_component[$name]($data[0]);
+        }
 
-		return false;
+        return true;
 	}
 
 	final public function __get(string $name): Component {
@@ -273,7 +278,7 @@ abstract class Variant extends Composite {
 }
 
 trait Childless {
-	final public function __call(string $name, array $value): bool {
+	final public function __call(string $name, array $data): bool {
 		return false;
 	}
 
@@ -310,8 +315,30 @@ trait Childless {
 	}
 }
 
+trait Invoke {
+    public function __invoke(array $data, array $order=[]): void {
+        if (empty($order)) {
+            foreach ($data as $name => $value) {
+                $this->_var[$name] = $value;
+            }
+        }
+        else {
+            if (!\array_is_list($data)) {
+                $data = \array_values($data);
+            }
+
+            foreach ($order as $id => $name) {
+                $this->_var[$name] = $data[$id];
+            }
+        }
+
+        $this->ready();
+    }
+}
+
 abstract class Leaf extends Component {
 	use Childless;
+	use Invoke;
 
     protected array $_var;
 	protected array $_ref;
@@ -357,10 +384,13 @@ abstract class Text extends Component {
         $this->_text = $state['_text'];
 	}
 
+	public function __invoke(array $data, array $order=[]): void {}
 	final public function common(string $name, int|float|string $value): void {}
 }
 
 abstract class Performer extends Composite {
+	use Invoke;
+
 	protected array $_var;
 	protected array $_ref;
 	protected array $_child;
@@ -400,20 +430,20 @@ abstract class Performer extends Composite {
 		}
 	}
 
-	final public function __call(string $name, array $value): bool {
-		if (!isset($this->_component[$name])) {
-			return false;
-		}
+	final public function __call(string $name, array $data): bool {
+        if (!isset($this->_component[$name])) {
+    		Component::error(Info::message('e_no_child', $name), Code::Component);
+	    	return false;
+        }
 
-		if (isset($value[0])) {
-			foreach ($value[0] as $key => $val) {
-				$this->_component[$name]->$key = $val;
-			}
+        if (isset($data[1])) {
+            $this->_component[$name]($data[0], $data[1]);
+        }
+        elseif (isset($data[0])) {
+            $this->_component[$name]($data[0]);
+        }
 
-			$this->_component[$name]->ready();
-		}
-
-		return true;
+        return true;
 	}
 
 	final public function __get(string $name): Component {
@@ -687,7 +717,7 @@ trait WrappedDependentResult {
 	}
 }
 
-trait PerformerActivator {
+trait PerformerMaster {
 	public function getOriginal(): Performer {
 		$component = [];
 
@@ -702,10 +732,10 @@ trait PerformerActivator {
 		}
 
 		if (\str_ends_with(__CLASS__, 'Map')) {
-			$class = ActiveCompositeMap::class;
+			$class = OriginalCompositeMap::class;
 		}
 		else {
-			$class = ActiveComposite::class;
+			$class = OriginalComposite::class;
 		}
 
 		return new $class([
@@ -720,7 +750,7 @@ trait PerformerActivator {
 	}
 }
 
-trait LeafActivator {
+trait LeafMaster {
 	public function getOriginal(): Leaf {
 		$var = [];
 
@@ -729,10 +759,10 @@ trait LeafActivator {
 		}
 
 		if (\str_ends_with(__CLASS__, 'Map')) {
-			$class = ActiveLeafMap::class;
+			$class = OriginalLeafMap::class;
 		}
 		else {
-			$class = ActiveLeaf::class;
+			$class = OriginalLeaf::class;
 		}
 
 		return new $class([
@@ -745,9 +775,9 @@ trait LeafActivator {
 	}
 }
 
-trait TextActivator {
-	public function getOriginal(): ActiveText {
-		return new ActiveText([
+trait TextMaster {
+	public function getOriginal(): OriginalText {
+		return new OriginalText([
 			'_text'   => $this->_text,
 			'_class'  => $this->_class,
 			'_name'   => $this->_name,
@@ -755,13 +785,13 @@ trait TextActivator {
 	}
 }
 
-final class ActiveComposite extends Performer {
+final class OriginalComposite extends Performer {
 	use Insertion;
 	use ReadyComposite;
 	use Result;
 }
 
-final class ActiveCompositeMap extends Performer {
+final class OriginalCompositeMap extends Performer {
 	use InsertionMap;
 	use ReadyComposite;
 	use Result;
@@ -771,30 +801,30 @@ final class FixedComposite extends DependentPerformer implements Derivative {
 	use Insertion;
 	use DependentResult;
 	use DependentCompositeResult;
-	use PerformerActivator;
+	use PerformerMaster;
 }
 
 final class FixedCompositeMap extends DependentPerformer implements Derivative {
 	use InsertionMap;
 	use DependentResult;
 	use DependentCompositeResult;
-	use PerformerActivator;
+	use PerformerMaster;
 }
 
-final class WrappedActiveComposite extends Performer implements Derivative, Wrapped {
+final class WrappedOriginalComposite extends Performer implements Derivative, Wrapped {
 	use WrappedComponent;
 	use ReadyComposite;
 	use Insertion;
 	use WrappedResult;
-	use PerformerActivator;
+	use PerformerMaster;
 }
 
-final class WrappedActiveCompositeMap extends Performer implements Derivative, Wrapped {
+final class WrappedOriginalCompositeMap extends Performer implements Derivative, Wrapped {
 	use WrappedComponent;
 	use ReadyComposite;
 	use InsertionMap;
 	use WrappedResult;
-	use PerformerActivator;
+	use PerformerMaster;
 }
 
 final class WrappedFixedComposite extends DependentPerformer implements Derivative, Wrapped {
@@ -802,7 +832,7 @@ final class WrappedFixedComposite extends DependentPerformer implements Derivati
 	use Insertion;
 	use WrappedDependentResult;
 	use DependentCompositeResult;
-	use PerformerActivator;
+	use PerformerMaster;
 }
 
 final class WrappedFixedCompositeMap extends DependentPerformer implements Derivative, Wrapped {
@@ -810,16 +840,16 @@ final class WrappedFixedCompositeMap extends DependentPerformer implements Deriv
 	use InsertionMap;
 	use WrappedDependentResult;
 	use DependentCompositeResult;
-	use PerformerActivator;
+	use PerformerMaster;
 }
 
-final class ActiveLeaf extends Leaf {
+final class OriginalLeaf extends Leaf {
 	use Insertion;
 	use ReadyLeaf;
 	use Result;
 }
 
-final class ActiveLeafMap extends Leaf {
+final class OriginalLeafMap extends Leaf {
 	use InsertionMap;
 	use ReadyLeaf;
 	use Result;
@@ -829,30 +859,30 @@ final class FixedLeaf extends DependentLeaf implements Derivative {
 	use Insertion;
 	use DependentResult;
 	use DependentLeafResult;
-	use LeafActivator;
+	use LeafMaster;
 }
 
 final class FixedLeafMap extends DependentLeaf implements Derivative {
 	use InsertionMap;
 	use DependentResult;
 	use DependentLeafResult;
-	use LeafActivator;
+	use LeafMaster;
 }
 
-final class WrappedActiveLeaf extends Leaf implements Derivative, Wrapped {
+final class WrappedOriginalLeaf extends Leaf implements Derivative, Wrapped {
 	use WrappedComponent;
 	use ReadyLeaf;
 	use Insertion;
 	use WrappedResult;
-	use LeafActivator;
+	use LeafMaster;
 }
 
-final class WrappedActiveLeafMap extends Leaf implements Derivative, Wrapped {
+final class WrappedOriginalLeafMap extends Leaf implements Derivative, Wrapped {
 	use WrappedComponent;
 	use ReadyLeaf;
 	use InsertionMap;
 	use WrappedResult;
-	use LeafActivator;
+	use LeafMaster;
 }
 
 final class WrappedFixedLeaf extends DependentLeaf implements Derivative, Wrapped {
@@ -860,7 +890,7 @@ final class WrappedFixedLeaf extends DependentLeaf implements Derivative, Wrappe
 	use Insertion;
 	use WrappedDependentResult;
 	use DependentLeafResult;
-	use LeafActivator;
+	use LeafMaster;
 }
 
 final class WrappedFixedLeafMap extends DependentLeaf implements Derivative, Wrapped {
@@ -868,10 +898,10 @@ final class WrappedFixedLeafMap extends DependentLeaf implements Derivative, Wra
 	use InsertionMap;
 	use WrappedDependentResult;
 	use DependentLeafResult;
-	use LeafActivator;
+	use LeafMaster;
 }
 
-final class ActiveText extends Text {
+final class OriginalText extends Text {
 	use InsertionStub;
 	use ReadyText;
 	use Result;
@@ -881,15 +911,15 @@ final class FixedText extends DependentText implements Derivative {
 	use InsertionStub;
 	use DependentResult;
 	use DependentTextResult;
-	use TextActivator;
+	use TextMaster;
 }
 
-final class WrappedActiveText extends Text implements Derivative, Wrapped {
+final class WrappedOriginalText extends Text implements Derivative, Wrapped {
 	use WrappedComponent;
 	use ReadyText;
 	use InsertionStub;
 	use WrappedResult;
-	use TextActivator;
+	use TextMaster;
 }
 
 final class WrappedFixedText extends DependentText implements Derivative, Wrapped {
@@ -897,7 +927,7 @@ final class WrappedFixedText extends DependentText implements Derivative, Wrappe
 	use InsertionStub;
 	use WrappedDependentResult;
 	use DependentTextResult;
-	use TextActivator;
+	use TextMaster;
 }
 
 final class Variator extends Variant {
@@ -996,8 +1026,9 @@ final class Emulator extends Component {
 	public function getChild(string $class): Component {return $this;}
 	public function getChildName(string $class): string|null {return null;}
 	public function getChildNames(string $class): array {return [];}
-	public function __call(string $name, array $value): bool {return false;}
+	public function __call(string $name, array $data): bool {return false;}
 	public function __get(string $name): Component {return $this;}
+	public function __invoke(array $data, array $order=[]): void {}
 	public function __isset(string $name): bool {return false;}
 	public function __unset(string $name): void {}
 	public function __set(string $name, string|int|float $value): void {}

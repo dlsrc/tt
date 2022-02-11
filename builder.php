@@ -33,50 +33,29 @@ final class Builder {
 	private array $before;
 	private array $after;
 
-	public function build(string $tpl): Component {
-		$this->block[0] = $tpl;
-
-		if ('' == $this->block[0]) {
-			return Component::emulate();
-		}
-
-		$this->types[]  = Config::get()->root;
-		$this->names[]  = 'ROOT';
-		$this->id[]     = 'ROOT';
-		$this->before[] = '';
-		$this->after[]  = '';
-
-		$this->prepareGlobalVars();
-		$this->prepareDependencies();
-		$this->prepareStacks();
-		$this->prepareComponents();
-
-		return $this->block[0];
-	}
-
 	public function __construct() {
 		$cfg = Config::get();
 
 		$this->component = [
-			'a_comp'      => __NAMESPACE__.'\\ActiveComposite',
-			'a_comp_map'  => __NAMESPACE__.'\\ActiveCompositeMap',
+			'a_comp'      => __NAMESPACE__.'\\OriginalComposite',
+			'a_comp_map'  => __NAMESPACE__.'\\OriginalCompositeMap',
 			'f_comp'      => __NAMESPACE__.'\\FixedComposite',
 			'f_comp_map'  => __NAMESPACE__.'\\FixedCompositeMap',
-			'wa_comp'     => __NAMESPACE__.'\\WrappedActiveComposite',
-			'wa_comp_map' => __NAMESPACE__.'\\WrappedActiveCompositeMap',
+			'wa_comp'     => __NAMESPACE__.'\\WrappedOriginalComposite',
+			'wa_comp_map' => __NAMESPACE__.'\\WrappedOriginalCompositeMap',
 			'wf_comp'     => __NAMESPACE__.'\\WrappedFixedComposite',
 			'wf_comp_map' => __NAMESPACE__.'\\WrappedFixedCompositeMap',
-			'a_leaf'      => __NAMESPACE__.'\\ActiveLeaf',
-			'a_leaf_map'  => __NAMESPACE__.'\\ActiveLeafMap',
+			'a_leaf'      => __NAMESPACE__.'\\OriginalLeaf',
+			'a_leaf_map'  => __NAMESPACE__.'\\OriginalLeafMap',
 			'f_leaf'      => __NAMESPACE__.'\\FixedLeaf',
 			'f_leaf_map'  => __NAMESPACE__.'\\FixedLeafMap',
-			'wa_leaf'     => __NAMESPACE__.'\\WrappedActiveLeaf',
-			'wa_leaf_map' => __NAMESPACE__.'\\WrappedActiveLeafMap',
+			'wa_leaf'     => __NAMESPACE__.'\\WrappedOriginalLeaf',
+			'wa_leaf_map' => __NAMESPACE__.'\\WrappedOriginalLeafMap',
 			'wf_leaf'     => __NAMESPACE__.'\\WrappedFixedLeaf',
 			'wf_leaf_map' => __NAMESPACE__.'\\WrappedFixedLeafMap',
-			'a_text'      => __NAMESPACE__.'\\ActiveText',
+			'a_text'      => __NAMESPACE__.'\\OriginalText',
 			'f_text'      => __NAMESPACE__.'\\FixedText',
-			'wa_text'     => __NAMESPACE__.'\\WrappedActiveText',
+			'wa_text'     => __NAMESPACE__.'\\WrappedOriginalText',
 			'wf_text'     => __NAMESPACE__.'\\WrappedFixedText',
 			'variator'    => __NAMESPACE__.'\\Variator',
 			'w_variator'  => __NAMESPACE__.'\\WrappedVariator',
@@ -123,6 +102,27 @@ final class Builder {
 		$this->globs  = [];
 		$this->before = [];
 		$this->after  = [];
+	}
+
+	public function build(string $tpl): Component {
+		$this->block[0] = $tpl;
+
+		if ('' == $this->block[0]) {
+			return Component::emulate();
+		}
+
+		$this->types[]  = Config::get()->root;
+		$this->names[]  = 'ROOT';
+		$this->id[]     = 'ROOT';
+		$this->before[] = '';
+		$this->after[]  = '';
+
+		$this->prepareGlobalVars();
+		$this->prepareDependencies();
+		$this->prepareStacks();
+		$this->prepareComponents();
+
+		return $this->block[0];
 	}
 
 	private function prepareGlobalVars(): void {
