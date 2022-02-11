@@ -18,21 +18,24 @@
 declare(strict_types=1);
 namespace dl\tt;
 
-enum Build {
+enum Build implements \dl\PreferredCase {
+	use \dl\DefaultCase;
+	use \dl\CurrentCase;
+
+    case Std;
     case Lite;
-    case Main;
 
 	public function ns(): string {
 		return match($this) {
+			self::Std  => __NAMESPACE__.'\\std',
 			self::Lite => __NAMESPACE__.'\\lite',
-			self::Main => __NAMESPACE__.'\\main',
 		};
 	}
 
 	public function builder(): string {
 		return match($this) {
+			self::Std  => __NAMESPACE__.'\\std\\Builder',
 			self::Lite => __NAMESPACE__.'\\lite\\Builder',
-			self::Main => __NAMESPACE__.'\\main\\Builder',
 		};
 	}
 }
