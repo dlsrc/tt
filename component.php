@@ -56,12 +56,12 @@
 declare(strict_types=1);
 namespace dl\tt;
 
-interface Wrapped {
-	public function unwrap(): void;
-}
-
 interface Derivative {
 	public function getOriginal(): Component;
+}
+
+interface Wrapped {
+	public function unwrap(): void;
 }
 
 trait Childless {
@@ -535,4 +535,69 @@ final class Emulator extends Component {
 	public function ready(): void {}
 	public function __toString(): string {return '';}
 	public function force(string $name, string $text): bool {return true;}
+}
+
+trait TextMaster {
+	public function getOriginal(): OriginalText {
+		return new OriginalText([
+			'_text'   => $this->_text,
+			'_class'  => $this->_class,
+			'_name'   => $this->_name,
+		]);
+	}
+}
+
+final class OriginalText extends Text {
+	use InsertionStub;
+	use ReadyText;
+	use Result;
+}
+
+final class FixedText extends DependentText implements Derivative {
+	use InsertionStub;
+	use DependentResult;
+	use DependentTextResult;
+	use TextMaster;
+}
+
+final class WrappedOriginalText extends Text implements Derivative, Wrapped {
+	use WrappedComponent;
+	use ReadyText;
+	use InsertionStub;
+	use WrappedResult;
+	use TextMaster;
+}
+
+final class WrappedFixedText extends DependentText implements Derivative, Wrapped {
+	use WrappedComponent;
+	use InsertionStub;
+	use DependentTextResult;
+	use WrappedDependentResult;
+	use TextMaster;
+}
+
+final class Variator extends Variant {
+	use ReadyVariant;
+	use Result;
+}
+
+final class WrappedVariator extends Variant implements Derivative, Wrapped {
+	use WrappedComponent;
+	use ReadyVariant;
+	use WrappedResult;
+
+	public function getOriginal(): Variator {
+		$component = [];
+		
+		foreach (\array_keys($this->_component) as $name) {
+			$component[$name] = clone $this->_component[$name];
+		}
+
+		return new Variator([
+			'_class'     => $this->_class,
+			'_name'      => $this->_name,
+			'_component' => $component,
+			'_variant'   => $this->_variant,
+		]);
+	}
 }

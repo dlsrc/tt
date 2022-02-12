@@ -10,55 +10,6 @@
 
 	namespace dl\tt
 
-	interface Wrapped
-
-    abstract class Component          implements \dl\DirectCallable
-
-	abstract class Composite          extends Component
-	abstract class Variant            extends Composite
-	abstract class Leaf               extends Component use Sequence
-	abstract class Performer          extends Composite use Sequence
-	abstract class DependentLeaf      extends Performer use DependentComponent
-	abstract class DependentPerformer extends Performer use DependentComponent
-
-	trait Sequence
-	trait DependentComponent
-	trait IndependentComponent
-	trait ReadyComponent         use IndependentComponent
-	trait ReadyVariant           use IndependentComponent
-	trait WrappedComponent
-	trait RootComponent
-	trait Insertion
-	trait InsertionMap
-	trait RawResult
-	trait Result                 use RawResult
-	trait WrappedResult          use RawResult
-	trait DependentRawResult
-	trait DependentResult        use DependentRawResult
-	trait WrappedDependentResult use DependentRawResult
-
-	final class OriginalComposite           extends Performer          use Insertion, ReadyComponent, Result
-	final class OriginalCompositeMap        extends Performer          use InsertionMap, ReadyComponent, Result
-	final class FixedComposite            extends DependentPerformer use Insertion, DependentResult
-	final class FixedCompositeMap         extends DependentPerformer use InsertionMap, DependentResult
-	final class Document                  extends Performer          use RootComponent, IndependentComponent
-	final class WrappedOriginalComposite    extends Performer          use WrappedComponent, ReadyComponent, Insertion, WrappedResult
-	final class WrappedOriginalCompositeMap extends Performer          use WrappedComponent, ReadyComponent, InsertionMap, WrappedResult
-	final class WrappedFixedComposite     extends DependentPerformer use WrappedComponent, Insertion, WrappedDependentResult
-	final class WrappedFixedCompositeMap  extends DependentPerformer use WrappedComponent, InsertionMap, WrappedDependentResult
-	final class OriginalLeaf                extends Leaf               use Insertion, ReadyComponent, Result
-	final class OriginalLeafMap             extends Leaf               use InsertionMap, ReadyComponent Result
-	final class FixedLeaf                 extends DependentLeaf      use Insertion, DependentResult
-	final class FixedLeafMap              extends DependentLeaf      use InsertionMap, DependentResult
-	final class Text                      extends Leaf               use RootComponent, IndependentComponent
-	final class WrappedOriginalLeaf         extends Leaf               use WrappedComponent, ReadyComponent, Insertion, WrappedResult
-	final class WrappedOriginalLeafMap      extends Leaf               use WrappedComponent, ReadyComponent, InsertionMap, WrappedResult
-	final class WrappedFixedLeaf          extends DependentLeaf      use WrappedComponent, Insertion, WrappedDependentResult
-	final class WrappedFixedLeafMap       extends DependentLeaf      use WrappedComponent, InsertionMap, WrappedDependentResult
-	final class Variator                  extends Variant            use ReadyVariant, Result
-	final class WrappedVariator           extends Variant            use WrappedComponent, ReadyVariant, WrappedResult
-	final class Emulator                  extends Component
-
     ------------------------------------------------------------------------
 
     PHP 8.1                                                         (C) 2022
@@ -289,16 +240,6 @@ trait LeafMaster {
 	}
 }
 
-trait TextMaster {
-	public function getOriginal(): OriginalText {
-		return new OriginalText([
-			'_text'   => $this->_text,
-			'_class'  => $this->_class,
-			'_name'   => $this->_name,
-		]);
-	}
-}
-
 final class OriginalComposite extends Performer {
 	use Insertion;
 	use ReadyComposite;
@@ -413,61 +354,6 @@ final class WrappedFixedLeafMap extends DependentLeaf implements Derivative, Wra
 	use DependentLeafResult;
 	use WrappedDependentResult;
 	use LeafMaster;
-}
-
-final class OriginalText extends Text {
-	use InsertionStub;
-	use ReadyText;
-	use Result;
-}
-
-final class FixedText extends DependentText implements Derivative {
-	use InsertionStub;
-	use DependentResult;
-	use DependentTextResult;
-	use TextMaster;
-}
-
-final class WrappedOriginalText extends Text implements Derivative, Wrapped {
-	use WrappedComponent;
-	use ReadyText;
-	use InsertionStub;
-	use WrappedResult;
-	use TextMaster;
-}
-
-final class WrappedFixedText extends DependentText implements Derivative, Wrapped {
-	use WrappedComponent;
-	use InsertionStub;
-	use DependentTextResult;
-	use WrappedDependentResult;
-	use TextMaster;
-}
-
-final class Variator extends Variant {
-	use ReadyVariant;
-	use Result;
-}
-
-final class WrappedVariator extends Variant implements Derivative, Wrapped {
-	use WrappedComponent;
-	use ReadyVariant;
-	use WrappedResult;
-
-	public function getOriginal(): Variator {
-		$component = [];
-		
-		foreach (\array_keys($this->_component) as $name) {
-			$component[$name] = clone $this->_component[$name];
-		}
-
-		return new Variator([
-			'_class'     => $this->_class,
-			'_name'      => $this->_name,
-			'_component' => $component,
-			'_variant'   => $this->_variant,
-		]);
-	}
 }
 
 final class Complex extends Performer {

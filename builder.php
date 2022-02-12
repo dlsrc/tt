@@ -75,12 +75,12 @@ abstract class Builder {
 			'wa_leaf_map' => $namespace.'\\WrappedOriginalLeafMap',
 			'wf_leaf'     => $namespace.'\\WrappedFixedLeaf',
 			'wf_leaf_map' => $namespace.'\\WrappedFixedLeafMap',
-			'a_text'      => $namespace.'\\OriginalText',
-			'f_text'      => $namespace.'\\FixedText',
-			'wa_text'     => $namespace.'\\WrappedOriginalText',
-			'wf_text'     => $namespace.'\\WrappedFixedText',
-			'variator'    => $namespace.'\\Variator',
-			'w_variator'  => $namespace.'\\WrappedVariator',
+			'a_text'      => __NAMESPACE__.'\\OriginalText',
+			'f_text'      => __NAMESPACE__.'\\FixedText',
+			'wa_text'     => __NAMESPACE__.'\\WrappedOriginalText',
+			'wf_text'     => __NAMESPACE__.'\\WrappedFixedText',
+			'variator'    => __NAMESPACE__.'\\Variator',
+			'w_variator'  => __NAMESPACE__.'\\WrappedVariator',
 		];
 
 		$cfg = Config::get();
