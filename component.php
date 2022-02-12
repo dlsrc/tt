@@ -37,22 +37,22 @@
 	trait DependentResult        use DependentRawResult
 	trait WrappedDependentResult use DependentRawResult
 
-	final class ActiveComposite           extends Performer          use Insertion, ReadyComponent, Result
-	final class ActiveCompositeMap        extends Performer          use InsertionMap, ReadyComponent, Result
+	final class OriginalComposite           extends Performer          use Insertion, ReadyComponent, Result
+	final class OriginalCompositeMap        extends Performer          use InsertionMap, ReadyComponent, Result
 	final class FixedComposite            extends DependentPerformer use Insertion, DependentResult
 	final class FixedCompositeMap         extends DependentPerformer use InsertionMap, DependentResult
 	final class Complex                   extends Performer          use RootComponent, IndependentComponent
-	final class WrappedActiveComposite    extends Performer          use WrappedComponent, ReadyComponent, Insertion, WrappedResult
-	final class WrappedActiveCompositeMap extends Performer          use WrappedComponent, ReadyComponent, InsertionMap, WrappedResult
+	final class WrappedOriginalComposite    extends Performer          use WrappedComponent, ReadyComponent, Insertion, WrappedResult
+	final class WrappedOriginalCompositeMap extends Performer          use WrappedComponent, ReadyComponent, InsertionMap, WrappedResult
 	final class WrappedFixedComposite     extends DependentPerformer use WrappedComponent, Insertion, WrappedDependentResult
 	final class WrappedFixedCompositeMap  extends DependentPerformer use WrappedComponent, InsertionMap, WrappedDependentResult
-	final class ActiveLeaf                extends Leaf               use Insertion, ReadyComponent, Result
-	final class ActiveLeafMap             extends Leaf               use InsertionMap, ReadyComponent Result
+	final class OriginalLeaf                extends Leaf               use Insertion, ReadyComponent, Result
+	final class OriginalLeafMap             extends Leaf               use InsertionMap, ReadyComponent Result
 	final class FixedLeaf                 extends DependentLeaf      use Insertion, DependentResult
 	final class FixedLeafMap              extends DependentLeaf      use InsertionMap, DependentResult
 	final class Document                  extends Leaf               use RootComponent, IndependentComponent
-	final class WrappedActiveLeaf         extends Leaf               use WrappedComponent, ReadyComponent, Insertion, WrappedResult
-	final class WrappedActiveLeafMap      extends Leaf               use WrappedComponent, ReadyComponent, InsertionMap, WrappedResult
+	final class WrappedOriginalLeaf         extends Leaf               use WrappedComponent, ReadyComponent, Insertion, WrappedResult
+	final class WrappedOriginalLeafMap      extends Leaf               use WrappedComponent, ReadyComponent, InsertionMap, WrappedResult
 	final class WrappedFixedLeaf          extends DependentLeaf      use WrappedComponent, Insertion, WrappedDependentResult
 	final class WrappedFixedLeafMap       extends DependentLeaf      use WrappedComponent, InsertionMap, WrappedDependentResult
 	final class Variator                  extends Variant            use ReadyVariant, Result
@@ -702,10 +702,10 @@ trait PerformerActivator {
 		}
 
 		if (\str_ends_with(__CLASS__, 'Map')) {
-			$class = ActiveCompositeMap::class;
+			$class = OriginalCompositeMap::class;
 		}
 		else {
-			$class = ActiveComposite::class;
+			$class = OriginalComposite::class;
 		}
 
 		return new $class([
@@ -729,10 +729,10 @@ trait LeafActivator {
 		}
 
 		if (\str_ends_with(__CLASS__, 'Map')) {
-			$class = ActiveLeafMap::class;
+			$class = OriginalLeafMap::class;
 		}
 		else {
-			$class = ActiveLeaf::class;
+			$class = OriginalLeaf::class;
 		}
 
 		return new $class([
@@ -746,8 +746,8 @@ trait LeafActivator {
 }
 
 trait TextActivator {
-	public function getOriginal(): ActiveText {
-		return new ActiveText([
+	public function getOriginal(): OriginalText {
+		return new OriginalText([
 			'_text'   => $this->_text,
 			'_class'  => $this->_class,
 			'_name'   => $this->_name,
@@ -755,13 +755,13 @@ trait TextActivator {
 	}
 }
 
-final class ActiveComposite extends Performer {
+final class OriginalComposite extends Performer {
 	use Insertion;
 	use ReadyComposite;
 	use Result;
 }
 
-final class ActiveCompositeMap extends Performer {
+final class OriginalCompositeMap extends Performer {
 	use InsertionMap;
 	use ReadyComposite;
 	use Result;
@@ -781,7 +781,7 @@ final class FixedCompositeMap extends DependentPerformer implements Derivative {
 	use PerformerActivator;
 }
 
-final class WrappedActiveComposite extends Performer implements Derivative, Wrapped {
+final class WrappedOriginalComposite extends Performer implements Derivative, Wrapped {
 	use WrappedComponent;
 	use ReadyComposite;
 	use Insertion;
@@ -789,7 +789,7 @@ final class WrappedActiveComposite extends Performer implements Derivative, Wrap
 	use PerformerActivator;
 }
 
-final class WrappedActiveCompositeMap extends Performer implements Derivative, Wrapped {
+final class WrappedOriginalCompositeMap extends Performer implements Derivative, Wrapped {
 	use WrappedComponent;
 	use ReadyComposite;
 	use InsertionMap;
@@ -813,13 +813,13 @@ final class WrappedFixedCompositeMap extends DependentPerformer implements Deriv
 	use PerformerActivator;
 }
 
-final class ActiveLeaf extends Leaf {
+final class OriginalLeaf extends Leaf {
 	use Insertion;
 	use ReadyLeaf;
 	use Result;
 }
 
-final class ActiveLeafMap extends Leaf {
+final class OriginalLeafMap extends Leaf {
 	use InsertionMap;
 	use ReadyLeaf;
 	use Result;
@@ -839,7 +839,7 @@ final class FixedLeafMap extends DependentLeaf implements Derivative {
 	use LeafActivator;
 }
 
-final class WrappedActiveLeaf extends Leaf implements Derivative, Wrapped {
+final class WrappedOriginalLeaf extends Leaf implements Derivative, Wrapped {
 	use WrappedComponent;
 	use ReadyLeaf;
 	use Insertion;
@@ -847,7 +847,7 @@ final class WrappedActiveLeaf extends Leaf implements Derivative, Wrapped {
 	use LeafActivator;
 }
 
-final class WrappedActiveLeafMap extends Leaf implements Derivative, Wrapped {
+final class WrappedOriginalLeafMap extends Leaf implements Derivative, Wrapped {
 	use WrappedComponent;
 	use ReadyLeaf;
 	use InsertionMap;
@@ -871,7 +871,7 @@ final class WrappedFixedLeafMap extends DependentLeaf implements Derivative, Wra
 	use LeafActivator;
 }
 
-final class ActiveText extends Text {
+final class OriginalText extends Text {
 	use InsertionStub;
 	use ReadyText;
 	use Result;
@@ -884,7 +884,7 @@ final class FixedText extends DependentText implements Derivative {
 	use TextActivator;
 }
 
-final class WrappedActiveText extends Text implements Derivative, Wrapped {
+final class WrappedOriginalText extends Text implements Derivative, Wrapped {
 	use WrappedComponent;
 	use ReadyText;
 	use InsertionStub;
