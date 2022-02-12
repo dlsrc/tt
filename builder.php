@@ -32,6 +32,7 @@ abstract class Builder {
 	abstract protected function buildComplex(int $i): void;
 	abstract protected function buildDocument(int $i): void;
 
+	protected Build $build;
 	protected array $component;
 	protected array $pattern;
 	protected array $block;
@@ -45,21 +46,19 @@ abstract class Builder {
 	protected array $before;
 	protected array $after;
 
-	public static function get() {
+	public static function get(): Builder {
 		$build = Build::now();
 		$class = $build->builder();
 		return new $class($build);
 	}
 
 	protected function __construct(Build $build) {
-		$cfg = Config::get();
-		$namespace = $build->ns();
+		$this->build = $build;
+		$namespace = $this->build->ns();
 
 		$this->component = [
 			'complex'     => $namespace.'\\Complex',
 			'document'    => $namespace.'\\Document',
-			'variator'    => $namespace.'\\Variator',
-			'w_variator'  => $namespace.'\\WrappedVariator',
 			'a_comp'      => $namespace.'\\OriginalComposite',
 			'a_comp_map'  => $namespace.'\\OriginalCompositeMap',
 			'f_comp'      => $namespace.'\\FixedComposite',
@@ -80,7 +79,11 @@ abstract class Builder {
 			'f_text'      => __NAMESPACE__.'\\FixedText',
 			'wa_text'     => __NAMESPACE__.'\\WrappedOriginalText',
 			'wf_text'     => __NAMESPACE__.'\\WrappedFixedText',
+			'variator'    => __NAMESPACE__.'\\Variator',
+			'w_variator'  => __NAMESPACE__.'\\WrappedVariator',
 		];
+
+		$cfg = Config::get();
 
 		$open  = \preg_quote($cfg->wrap_open, '/');
 		$close = \preg_quote($cfg->wrap_close, '/');
@@ -129,7 +132,7 @@ abstract class Builder {
 			return Component::emulate();
 		}
 
-		$this->types[]  = Config::get()->root;
+		$this->types[]  = $this->build->ns().'\\'.Config::get()->root;
 		$this->names[]  = 'ROOT';
 		$this->id[]     = 'ROOT';
 		$this->before[] = '';
@@ -304,8 +307,6 @@ abstract class Builder {
 	}
 
 	protected function prepareComponents(): void {
-		$cfg = Config::get();
-
 		for ($i = \array_key_last($this->types); $i >= 0; $i--) {
 			switch ($this->types[$i]) {
 			case $this->component['a_comp']:
@@ -412,7 +413,6 @@ abstract class Builder {
 				break;
 
 			case $this->component['variator']:
-				$this->buildVariator($i);
 				if (isset($this->child[$i][0])) {
 					$this->block[$i] = new $this->types[$i]([
 						'_class'     => $this->id[$i],

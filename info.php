@@ -21,14 +21,14 @@ namespace dl\tt;
 final class Info implements \dl\Sociable {
 	use \dl\Informer;
 	private const VERSION  = '1.0.0';
-	private const RELEASE  = 'dev5';
+	private const RELEASE  = 'alpha1';
 
 	public static function build(string $template, string|null $markup=null): string {
 		if (self::RELEASE) {
-			$release = '-'.self::VERSION.'-'.self::RELEASE;
+			$release = '-'.self::VERSION.'-'.\strtolower(Build::name()).'-'.self::RELEASE;
 		}
 		else {
-			$release = '-'.self::VERSION;
+			$release = '-'.self::VERSION.'-'.\strtolower(Build::name()).'-release';
 		}
 
 		if ($markup && 'ROOT' != $markup) {

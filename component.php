@@ -8,7 +8,7 @@
 
     ------------------------------------------------------------------------
 
-	namespace dl\tt
+	namespace dl\tt;
 
 	interface \dl\tt\Wrapped;
 	interface \dl\tt\Derivative;
@@ -35,9 +35,13 @@
 	trait \dl\tt\TextMaster;
 
 	abstract class \dl\tt\Component;
+	abstract class \dl\tt\Composite;
+	abstract class \dl\tt\Variant;
 	abstract class \dl\tt\Text;
 	abstract class \dl\tt\DependentText;
 
+	final class \dl\tt\Variator;
+	final class \dl\tt\WrappedVariator;
 	final class \dl\tt\OriginalText;
 	final class \dl\tt\FixedText;
 	final class \dl\tt\WrappedOriginalText;
@@ -358,6 +362,170 @@ abstract class Component implements \dl\DirectCallable {
 		elseif (Mode::Rebuild->current() || $pro) {
 			\dl\Error::log($message, $code);
 		}
+	}
+}
+
+abstract class Composite extends Component {
+    protected array $_component;
+
+	public function __construct(array $state) {
+		parent::__construct($state);
+        $this->_component = $state['_component'];
+	}
+
+	final public function __isset(string $name): bool {
+		return isset($this->_component[$name]);
+	}
+
+	final public function drop(): void {
+		foreach ($this->_component as $component) {
+			$component->drop();
+		}
+
+		$this->update();
+	}
+
+	final public function isComponent(string $name): bool {
+		if (isset($this->_component[$name])) {
+			return true;
+		}
+
+		if (\str_contains($name, Component::NS)) {
+			$branch = \explode(Component::NS, $name);
+			$com = $this;
+
+			foreach ($branch as $n) {
+				if (!$com->isComponent($n)) {
+					return false;
+				}
+
+				$com = $com->{$n};
+			}
+
+			return true;
+		}
+
+		return false;
+	}
+
+	final public function getChild(string $class): Component {
+		foreach ($this->_component as $component) {
+			if ($component->isClass($class)) {
+				return $component;
+			}
+		}
+
+		Component::error(Info::message('e_no_class', $class), Code::Type);
+		return Component::emulate();
+	}
+
+	final public function getChildName(string $class): string|null {
+		foreach ($this->_component as $name => $component) {
+			if ($component->isClass($class)) {
+				return $name;
+			}
+		}
+
+		return null;
+	}
+
+	final public function getChildNames(string $class): array {
+		$names = [];
+
+		foreach ($this->_component as $name => $component) {
+			if ($component->isClass($class)) {
+				$names[] = $name;
+			}
+		}
+
+		return $names;
+	}
+}
+
+abstract class Variant extends Composite {
+    protected string $_variant;
+
+	public function __construct(array $state) {
+		parent::__construct($state);
+        $this->_variant = $state['_variant'];
+	}
+
+	final public function __clone(): void {
+		foreach (\array_keys($this->_component) as $name) {
+			$this->_component[$name] = clone $this->_component[$name];
+		}
+	}
+
+    final public function __invoke(array $data, array $order=[]): void {
+		$this->_component[$this->_variant]($data, $order);
+    }
+
+	final public function __call(string $name, array $data): bool {
+        if (!isset($this->_component[$name])) {
+    		Component::error(Info::message('e_no_child', $name), Code::Component);
+	    	return false;
+        }
+
+		$this->_variant = $name;
+
+        if (isset($data[1])) {
+            $this->_component[$name]($data[0], $data[1]);
+        }
+        elseif (isset($data[0])) {
+            $this->_component[$name]($data[0]);
+        }
+
+        return true;
+	}
+
+	final public function __get(string $name): Component {
+		if (isset($this->_component[$name])) {
+			$this->_variant = $name;
+			return $this->_component[$name];
+		}
+
+		Component::error(Info::message('e_no_child', $name), Code::Component);
+		return Component::emulate();
+	}
+
+	final public function __unset(string $name): void {
+		unset($this->_component[$name]);
+	}
+
+	final public function __set(string $name, int|float|string|array $value): void {
+		$this->_component[$this->_variant]->$name = $value;
+	}
+
+	final public function common(string $name, int|float|string $value): void {
+		foreach ($this->_component as $component) {
+			$component->common($name, $value);
+		}
+	}
+}
+
+final class Variator extends Variant {
+	use ReadyVariant;
+	use RootComponent;
+}
+
+final class WrappedVariator extends Variant implements Derivative, Wrapped {
+	use WrappedComponent;
+	use ReadyVariant;
+	use WrappedResult;
+
+	public function getOriginal(): Variator {
+		$component = [];
+		
+		foreach (\array_keys($this->_component) as $name) {
+			$component[$name] = clone $this->_component[$name];
+		}
+
+		return new Variator([
+			'_class'     => $this->_class,
+			'_name'      => $this->_name,
+			'_component' => $component,
+			'_variant'   => $this->_variant,
+		]);
 	}
 }
 

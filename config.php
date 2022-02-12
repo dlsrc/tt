@@ -20,7 +20,6 @@ namespace dl\tt;
 
 final class Config extends \dl\Setter {
 	protected function initialize(): void	{
-		$this->_property['build']         = Build::Main;
 		$this->_property['root']          = 'Complex';
 
 		$this->_property['auto_class']    = true;

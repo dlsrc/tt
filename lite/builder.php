@@ -20,7 +20,7 @@ namespace dl\tt\lite;
 
 final class Builder extends \dl\tt\Builder {
 	protected function prepareStacks(): void {
-		$refns  = Config::get()->refns;
+		$refns  = \dl\tt\Config::get()->refns;
 
 		foreach (\array_keys($this->block) as $i) {
 			$key = 0;
@@ -44,7 +44,7 @@ final class Builder extends \dl\tt\Builder {
 				}
 
 				if (\str_starts_with($match[1], $refns)) {
-					$match[1] = Component::NS.\substr($match[1], 1);
+					$match[1] = \dl\tt\Component::NS.\substr($match[1], 1);
 				}
 
 				if (!isset($this->stack[$i][$match[1]])) {
@@ -71,7 +71,7 @@ final class Builder extends \dl\tt\Builder {
 
 	protected function findMap(int $id, string $prefix, bool $leaf): bool {
 		foreach (\array_keys($this->stack[$id]) as $var) {
-			if (\is_string($var) && \str_contains($var, Component::NS) && Component::NS != $var[0]) {
+			if (\is_string($var) && \str_contains($var, \dl\tt\Component::NS) && \dl\tt\Component::NS != $var[0]) {
 				if ($leaf) {
 					$comp = $prefix.'_leaf_map';
 				}
@@ -176,6 +176,7 @@ final class Builder extends \dl\tt\Builder {
 	}
 
 	protected function buildComplex(int $i): void {
+		$cfg = \dl\tt\Config::get();
 		$this->block[$i] = new $this->types[$i]([
 			'_chain'     => $this->stack[$i],
 			'_ref'       => $this->ref[$i],
