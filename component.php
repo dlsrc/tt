@@ -687,7 +687,7 @@ trait WrappedDependentResult {
 	}
 }
 
-trait PerformerActivator {
+trait PerformerMaster {
 	public function getOriginal(): Performer {
 		$component = [];
 
@@ -720,7 +720,7 @@ trait PerformerActivator {
 	}
 }
 
-trait LeafActivator {
+trait LeafMaster {
 	public function getOriginal(): Leaf {
 		$var = [];
 
@@ -745,7 +745,7 @@ trait LeafActivator {
 	}
 }
 
-trait TextActivator {
+trait TextMaster {
 	public function getOriginal(): OriginalText {
 		return new OriginalText([
 			'_text'   => $this->_text,
@@ -771,14 +771,14 @@ final class FixedComposite extends DependentPerformer implements Derivative {
 	use Insertion;
 	use DependentResult;
 	use DependentCompositeResult;
-	use PerformerActivator;
+	use PerformerMaster;
 }
 
 final class FixedCompositeMap extends DependentPerformer implements Derivative {
 	use InsertionMap;
 	use DependentResult;
 	use DependentCompositeResult;
-	use PerformerActivator;
+	use PerformerMaster;
 }
 
 final class WrappedOriginalComposite extends Performer implements Derivative, Wrapped {
@@ -786,7 +786,7 @@ final class WrappedOriginalComposite extends Performer implements Derivative, Wr
 	use ReadyComposite;
 	use Insertion;
 	use WrappedResult;
-	use PerformerActivator;
+	use PerformerMaster;
 }
 
 final class WrappedOriginalCompositeMap extends Performer implements Derivative, Wrapped {
@@ -794,7 +794,7 @@ final class WrappedOriginalCompositeMap extends Performer implements Derivative,
 	use ReadyComposite;
 	use InsertionMap;
 	use WrappedResult;
-	use PerformerActivator;
+	use PerformerMaster;
 }
 
 final class WrappedFixedComposite extends DependentPerformer implements Derivative, Wrapped {
@@ -802,7 +802,7 @@ final class WrappedFixedComposite extends DependentPerformer implements Derivati
 	use Insertion;
 	use WrappedDependentResult;
 	use DependentCompositeResult;
-	use PerformerActivator;
+	use PerformerMaster;
 }
 
 final class WrappedFixedCompositeMap extends DependentPerformer implements Derivative, Wrapped {
@@ -810,7 +810,7 @@ final class WrappedFixedCompositeMap extends DependentPerformer implements Deriv
 	use InsertionMap;
 	use WrappedDependentResult;
 	use DependentCompositeResult;
-	use PerformerActivator;
+	use PerformerMaster;
 }
 
 final class OriginalLeaf extends Leaf {
@@ -829,14 +829,14 @@ final class FixedLeaf extends DependentLeaf implements Derivative {
 	use Insertion;
 	use DependentResult;
 	use DependentLeafResult;
-	use LeafActivator;
+	use LeafMaster;
 }
 
 final class FixedLeafMap extends DependentLeaf implements Derivative {
 	use InsertionMap;
 	use DependentResult;
 	use DependentLeafResult;
-	use LeafActivator;
+	use LeafMaster;
 }
 
 final class WrappedOriginalLeaf extends Leaf implements Derivative, Wrapped {
@@ -844,7 +844,7 @@ final class WrappedOriginalLeaf extends Leaf implements Derivative, Wrapped {
 	use ReadyLeaf;
 	use Insertion;
 	use WrappedResult;
-	use LeafActivator;
+	use LeafMaster;
 }
 
 final class WrappedOriginalLeafMap extends Leaf implements Derivative, Wrapped {
@@ -852,7 +852,7 @@ final class WrappedOriginalLeafMap extends Leaf implements Derivative, Wrapped {
 	use ReadyLeaf;
 	use InsertionMap;
 	use WrappedResult;
-	use LeafActivator;
+	use LeafMaster;
 }
 
 final class WrappedFixedLeaf extends DependentLeaf implements Derivative, Wrapped {
@@ -860,7 +860,7 @@ final class WrappedFixedLeaf extends DependentLeaf implements Derivative, Wrappe
 	use Insertion;
 	use WrappedDependentResult;
 	use DependentLeafResult;
-	use LeafActivator;
+	use LeafMaster;
 }
 
 final class WrappedFixedLeafMap extends DependentLeaf implements Derivative, Wrapped {
@@ -868,7 +868,7 @@ final class WrappedFixedLeafMap extends DependentLeaf implements Derivative, Wra
 	use InsertionMap;
 	use WrappedDependentResult;
 	use DependentLeafResult;
-	use LeafActivator;
+	use LeafMaster;
 }
 
 final class OriginalText extends Text {
@@ -881,7 +881,7 @@ final class FixedText extends DependentText implements Derivative {
 	use InsertionStub;
 	use DependentResult;
 	use DependentTextResult;
-	use TextActivator;
+	use TextMaster;
 }
 
 final class WrappedOriginalText extends Text implements Derivative, Wrapped {
@@ -889,7 +889,7 @@ final class WrappedOriginalText extends Text implements Derivative, Wrapped {
 	use ReadyText;
 	use InsertionStub;
 	use WrappedResult;
-	use TextActivator;
+	use TextMaster;
 }
 
 final class WrappedFixedText extends DependentText implements Derivative, Wrapped {
@@ -897,7 +897,7 @@ final class WrappedFixedText extends DependentText implements Derivative, Wrappe
 	use InsertionStub;
 	use WrappedDependentResult;
 	use DependentTextResult;
-	use TextActivator;
+	use TextMaster;
 }
 
 final class Variator extends Variant {
