@@ -293,16 +293,30 @@ final class Builder {
 		}
 	}
 
-	private function identifyType(int $id, string $prefix): void {
-		if (!isset($this->child[$id][0])) {
-			$this->types[$id] = $this->component[$leaf];
-		}
-
+	protected function findMap(int $id, string $prefix, bool $leaf): bool {
 		foreach (\array_keys($this->stack[$id]) as $var) {
 			if (\is_string($var) && \str_contains($var, Component::NS) && Component::NS != $var[0]) {
-				$this->types[$id] = $this->types[$id].'Map';
-				break;
+				if ($leaf) {
+					$comp = $prefix.'_leaf_map';
+				}
+				else {
+					$comp = $prefix.'_comp_map';
+				}
+
+				$this->types[$id] = $this->component[$comp];
+				return true;
 			}
+		}
+
+		return false;
+	}
+
+	protected function identifyType(int $id, string $prefix): void {
+		$leaf = !isset($this->child[$id][0]);
+
+		if (!$this->findMap($id, $prefix, $leaf) && $leaf) {
+			$comp = $prefix.'_leaf';
+			$this->types[$id] = $this->component[$comp];
 		}
 	}
 
