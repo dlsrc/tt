@@ -123,8 +123,8 @@ final class Snippet {
 				}
 
 				$cfg = Config::get();
-				$cfg->root = __NAMESPACE__.'\\ActiveComposite';
-				$component = (new Builder())->build($tpl);
+				$cfg->root = 'OriginalComposite';
+				$component = Builder::get()->build($tpl);
 
 				if ('ROOT' != $markup) {
 					$type = \explode('.', $markup);
@@ -146,7 +146,7 @@ final class Snippet {
 
 				self::$_snippet[$name] = $component;
 				(new \dl\Exporter($snippet))->save(self::$_snippet[$name]);
-				$cfg->root = __NAMESPACE__.'\\Complex';
+				$cfg->root = 'Complex';
 			}
 		}
 

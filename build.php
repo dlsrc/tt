@@ -8,7 +8,7 @@
 
     ------------------------------------------------------------------------
 
-    class dl\tt\Info
+    enum dl\tt\Build
 
     ------------------------------------------------------------------------
 
@@ -18,31 +18,24 @@
 declare(strict_types=1);
 namespace dl\tt;
 
-final class Info implements \dl\Sociable {
-	use \dl\Informer;
-	private const VERSION  = '1.0.0';
-	private const RELEASE  = 'alpha1';
+enum Build implements \dl\PreferredCase {
+	use \dl\DefaultCase;
+	use \dl\CurrentCase;
 
-	public static function build(string $template, string|null $markup=null): string {
-		if (self::RELEASE) {
-			$release = '-'.self::VERSION.'-'.\strtolower(Build::name()).'-'.self::RELEASE;
-		}
-		else {
-			$release = '-'.self::VERSION.'-'.\strtolower(Build::name()).'-release';
-		}
+    case Std;
+    case Lite;
 
-		if ($markup && 'ROOT' != $markup) {
-			return \substr($template, 0, \strrpos($template, '.'))
-			.'-'.$markup.$release.'.php';
-		}
-
-		return \substr($template, 0, \strrpos($template, '.'))
-		.$release.'.php';
+	public function ns(): string {
+		return match($this) {
+			self::Std  => __NAMESPACE__.'\\std',
+			self::Lite => __NAMESPACE__.'\\lite',
+		};
 	}
 
-	public static function collect(string $template): string {
-		return \substr($template, 0, \strrpos($template, '.')).
-			'-'.self::VERSION.
-			\substr($template, \strrpos($template, '.'));
+	public function builder(): string {
+		return match($this) {
+			self::Std  => __NAMESPACE__.'\\std\\Builder',
+			self::Lite => __NAMESPACE__.'\\lite\\Builder',
+		};
 	}
 }

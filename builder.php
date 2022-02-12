@@ -18,79 +18,72 @@
 declare(strict_types=1);
 namespace dl\tt;
 
-final class Builder {
-	private array $component;
-	private array $pattern;
-	private array $block;
-	private array $names;
-	private array $id;
-	private array $types;
-	private array $stack;
-	private array $ref;
-	private array $var;
-	private array $child;
-	private array $globs;
-	private array $before;
-	private array $after;
+abstract class Builder {
+	abstract protected function prepareStacks(): void;
+	abstract protected function findMap(int $id, string $prefix, bool $leaf): bool;
+	abstract protected function buildOriginalComposite(int $i): void;
+	abstract protected function buildWrappedOriginalComposite(int $i): void;
+	abstract protected function buildFixedComposite(int $i): void;
+	abstract protected function buildWrappedFixedComposite(int $i): void;
+	abstract protected function buildOriginalLeaf(int $i): void;
+	abstract protected function buildWrappedOriginalLeaf(int $i): void;
+	abstract protected function buildFixedLeaf(int $i): void;
+	abstract protected function buildWrappedFixedLeaf(int $i): void;
+	abstract protected function buildComplex(int $i): void;
+	abstract protected function buildDocument(int $i): void;
 
-	public function build(string $tpl): Component {
-		$this->block[0] = $tpl;
+	protected Build $build;
+	protected array $component;
+	protected array $pattern;
+	protected array $block;
+	protected array $names;
+	protected array $id;
+	protected array $types;
+	protected array $stack;
+	protected array $ref;
+	protected array $child;
+	protected array $globs;
+	protected array $before;
+	protected array $after;
 
-		if ('' == $this->block[0]) {
-			return Component::emulate();
-		}
-
-		$this->types[]  = Config::get()->root;
-		$this->names[]  = 'ROOT';
-		$this->id[]     = 'ROOT';
-		$this->before[] = '';
-		$this->after[]  = '';
-
-		$this->prepareGlobalVars();
-		$this->prepareDependencies();
-		$this->prepareStacks();
-		$this->prepareComponents();
-
-		return $this->block[0];
+	public static function get(): Builder {
+		$build = Build::now();
+		$class = $build->builder();
+		return new $class($build);
 	}
 
-	public function __construct() {
-		$cfg = Config::get();
+	protected function __construct(Build $build) {
+		$this->build = $build;
+		$namespace = $this->build->ns();
 
 		$this->component = [
-			'a_comp'       => __NAMESPACE__.'\\ActiveComposite',
-			'a_comp_list'  => __NAMESPACE__.'\\ActiveCompositeList',
-			'a_comp_map'   => __NAMESPACE__.'\\ActiveCompositeMap',
-			'f_comp'       => __NAMESPACE__.'\\FixedComposite',
-			'f_comp_list'  => __NAMESPACE__.'\\FixedCompositeList',
-			'f_comp_map'   => __NAMESPACE__.'\\FixedCompositeMap',
-			'wa_comp'      => __NAMESPACE__.'\\WrappedActiveComposite',
-			'wa_comp_list' => __NAMESPACE__.'\\WrappedActiveCompositeList',
-			'wa_comp_map'  => __NAMESPACE__.'\\WrappedActiveCompositeMap',
-			'wf_comp'      => __NAMESPACE__.'\\WrappedFixedComposite',
-			'wf_comp_list' => __NAMESPACE__.'\\WrappedFixedCompositeList',
-			'wf_comp_map'  => __NAMESPACE__.'\\WrappedFixedCompositeMap',
-			'a_leaf'       => __NAMESPACE__.'\\ActiveLeaf',
-			'a_leaf_list'  => __NAMESPACE__.'\\ActiveLeafList',
-			'a_leaf_map'   => __NAMESPACE__.'\\ActiveLeafMap',
-			'f_leaf'       => __NAMESPACE__.'\\FixedLeaf',
-			'f_leaf_list'  => __NAMESPACE__.'\\FixedLeafList',
-			'f_leaf_map'   => __NAMESPACE__.'\\FixedLeafMap',
-			'wa_leaf'      => __NAMESPACE__.'\\WrappedActiveLeaf',
-			'wa_leaf_list' => __NAMESPACE__.'\\WrappedActiveLeafList',
-			'wa_leaf_map'  => __NAMESPACE__.'\\WrappedActiveLeafMap',
-			'wf_leaf'      => __NAMESPACE__.'\\WrappedFixedLeaf',
-			'wf_leaf_list' => __NAMESPACE__.'\\WrappedFixedLeafList',
-			'wf_leaf_map'  => __NAMESPACE__.'\\WrappedFixedLeafMap',
-			'a_text'       => __NAMESPACE__.'\\ActiveText',
-			'f_text'       => __NAMESPACE__.'\\FixedText',
-			'wa_text'      => __NAMESPACE__.'\\WrappedActiveText',
-			'wf_text'      => __NAMESPACE__.'\\WrappedFixedText',
-			'variator'     => __NAMESPACE__.'\\Variator',
-			'w_variator'   => __NAMESPACE__.'\\WrappedVariator',
-			'document'     => __NAMESPACE__.'\\Document',
-			'complex'      => __NAMESPACE__.'\\Complex',
+			'complex'     => $namespace.'\\Complex',
+			'document'    => $namespace.'\\Document',
+			'a_comp'      => $namespace.'\\OriginalComposite',
+			'a_comp_map'  => $namespace.'\\OriginalCompositeMap',
+			'f_comp'      => $namespace.'\\FixedComposite',
+			'f_comp_map'  => $namespace.'\\FixedCompositeMap',
+			'wa_comp'     => $namespace.'\\WrappedOriginalComposite',
+			'wa_comp_map' => $namespace.'\\WrappedOriginalCompositeMap',
+			'wf_comp'     => $namespace.'\\WrappedFixedComposite',
+			'wf_comp_map' => $namespace.'\\WrappedFixedCompositeMap',
+			'a_leaf'      => $namespace.'\\OriginalLeaf',
+			'a_leaf_map'  => $namespace.'\\OriginalLeafMap',
+			'f_leaf'      => $namespace.'\\FixedLeaf',
+			'f_leaf_map'  => $namespace.'\\FixedLeafMap',
+			'wa_leaf'     => $namespace.'\\WrappedOriginalLeaf',
+			'wa_leaf_map' => $namespace.'\\WrappedOriginalLeafMap',
+			'wf_leaf'     => $namespace.'\\WrappedFixedLeaf',
+			'wf_leaf_map' => $namespace.'\\WrappedFixedLeafMap',
+			'a_text'      => __NAMESPACE__.'\\OriginalText',
+			'f_text'      => __NAMESPACE__.'\\FixedText',
+			'wa_text'     => __NAMESPACE__.'\\WrappedOriginalText',
+			'wf_text'     => __NAMESPACE__.'\\WrappedFixedText',
+			'variator'    => __NAMESPACE__.'\\Variator',
+			'w_variator'  => __NAMESPACE__.'\\WrappedVariator',
 		];
+
+		$cfg = Config::get();
 
 		$open  = \preg_quote($cfg->wrap_open, '/');
 		$close = \preg_quote($cfg->wrap_close, '/');
@@ -126,14 +119,34 @@ final class Builder {
 		$this->types  = [];
 		$this->stack  = [];
 		$this->ref    = [];
-		$this->var    = [];
 		$this->child  = [];
 		$this->globs  = [];
 		$this->before = [];
 		$this->after  = [];
 	}
 
-	private function prepareGlobalVars(): void {
+	public function build(string $tpl): Component {
+		$this->block[0] = $tpl;
+
+		if ('' == $this->block[0]) {
+			return Component::emulate();
+		}
+
+		$this->types[]  = $this->build->ns().'\\'.Config::get()->root;
+		$this->names[]  = 'ROOT';
+		$this->id[]     = 'ROOT';
+		$this->before[] = '';
+		$this->after[]  = '';
+
+		$this->prepareGlobalVars();
+		$this->prepareDependencies();
+		$this->prepareStacks();
+		$this->prepareComponents();
+
+		return $this->block[0];
+	}
+
+	protected function prepareGlobalVars(): void {
 		if (0 == \preg_match_all($this->pattern['global'], $this->block[0], $matches, \PREG_SET_ORDER)) {
 			return;
 		}
@@ -166,7 +179,7 @@ final class Builder {
 		}
 	}
 
-	private function prepareDependencies(): void {
+	protected function prepareDependencies(): void {
 		$cfg     = Config::get();
 		$trim    = !$cfg->keep_spaces;
 		$variant = $cfg->variant;
@@ -258,82 +271,7 @@ final class Builder {
 		}
 	}
 
-	private function prepareStacks(): void {
-		$refns  = Config::get()->refns;
-
-		foreach (\array_keys($this->block) as $i) {
-			$key = 0;
-			$this->ref[$i] = [];
-			$this->ref[$i]['var'] = [];
-			$this->ref[$i]['com'] = [];
-			$this->var[$i] = [];
-
-			if (0 == \preg_match_all($this->pattern['variable'], $this->block[$i], $matches, \PREG_SET_ORDER)) {
-				$this->stack[$i] = [$this->block[$i]];
-				continue;
-			}
-
-			$split = \preg_split($this->pattern['variable'], $this->block[$i]);
-
-			foreach ($matches as $id => $match) {
-				if ('' != \trim($split[$id])) {
-					$this->stack[$i][$key] = $split[$id];
-					$key++;
-				}
-
-				if (isset($match[4])) {
-					$match[3] = $match[4];
-				}
-
-				if (\str_starts_with($match[1], $refns)) {
-					$match[1] = Component::NS.\substr($match[1], 1);
-					$var = false;
-				}
-				elseif (\str_starts_with($match[1], Component::NS)) {
-					$var = false;
-				}
-				else {
-					$var = true;
-				}
-
-				if ($var) {
-					if (!isset($this->var[$i][$match[1]])) {
-						$this->var[$i][$match[1]] = $match[3]??'';
-						$this->stack[$i][$key] = '';
-						$this->ref[$i]['var'][$key] = $match[1];
-					}
-					else {
-						if (isset($match[3]) && '' == $this->var[$i][$match[1]]) {
-							$this->var[$i][$match[1]] = $match[3];
-						}
-
-						$this->stack[$i][$key] = '';
-						$this->ref[$i]['var'][$key] = $match[1];
-					}
-
-					$key++;
-				}
-				else {
-					if (!isset($this->stack[$i][$match[1]])) {
-						$this->stack[$i][$match[1]] = '';
-					}
-					else {
-						$this->stack[$i][$key] = $this->stack[$i][$match[1]];
-						$this->ref[$i]['com'][$key] = $match[1];
-						$key++;
-					}
-				}
-			}
-
-			$id++;
-
-			if ('' != \trim($split[$id])) {
-				$this->stack[$i][$key] = $split[$id];
-			}
-		}
-	}
-
-	private function identifyType(int $id, string $prefix): void {
+	protected function identifyType(int $id, string $prefix): void {
 		if (!isset($this->child[$id][0])) {
 			if (empty($this->ref[$id]['var']) && empty($this->ref[$id]['com']) && isset($this->stack[$id][0]) && 1 == \count($this->stack[$id])) {
 				$comp = $prefix.'_text';
@@ -341,51 +279,23 @@ final class Builder {
 				return;
 			}
 
-			$parent = false;
+			$leaf = true;
 		}
 		else {
-			$parent = true;
+			$leaf = false;
 		}
 
-		$string = false;
-		$array  = false;
+		if ($this->findMap($id, $prefix, $leaf)) {
+			return;
+		}
 
-		foreach (\array_keys($this->var[$id]) as $name) {
-			if (\str_contains($name, Component::NS)) {
-				$array = true;
-			}
-			else {
-				$string = true;
-			}
-		}
-	
-		if ($array) {
-			if ($string) {
-				if ($parent) {
-					$comp = $prefix.'_comp_map';
-				}
-				else {
-					$comp = $prefix.'_leaf_map';
-				}
-			}
-			elseif ($parent) {
-				$comp = $prefix.'_comp_list';
-			}
-			else {
-				$comp = $prefix.'_leaf_list';
-			}
-		}
-		elseif ($parent) {
-			$comp = $prefix.'_comp';
-		}
-		else {
+		if ($leaf) {
 			$comp = $prefix.'_leaf';
+			$this->types[$id] = $this->component[$comp];
 		}
-
-		$this->types[$id] = $this->component[$comp];
 	}
 
-	private function getComposition(int $i): array {
+	protected function getComposition(int $i): array {
 		$component = [];
 
 		foreach ($this->child[$i] as $id) {
@@ -396,9 +306,7 @@ final class Builder {
 		return $component;
 	}
 
-	private function prepareComponents(): void {
-		$cfg = Config::get();
-
+	protected function prepareComponents(): void {
 		for ($i = \array_key_last($this->types); $i >= 0; $i--) {
 			switch ($this->types[$i]) {
 			case $this->component['a_comp']:
@@ -427,131 +335,46 @@ final class Builder {
 
 			switch ($this->types[$i]) {
 			case $this->component['a_comp']:
-			case $this->component['a_comp_list']:
 			case $this->component['a_comp_map']:
-
-				$this->block[$i] = new $this->types[$i]([
-					'_chain'     => $this->stack[$i],
-					'_var'       => $this->var[$i],
-					'_ref'       => $this->ref[$i]['var'],
-					'_child'     => $this->ref[$i]['com'],
-					'_class'     => $this->id[$i],
-					'_name'      => $this->names[$i],
-					'_component' => $this->getComposition($i),
-				]);
+				$this->buildOriginalComposite($i);
 				break;
 
 			case $this->component['wa_comp']:
-			case $this->component['wa_comp_list']:
 			case $this->component['wa_comp_map']:
-
-				$this->block[$i] = new $this->types[$i]([
-					'_chain'     => $this->stack[$i],
-					'_var'       => $this->var[$i],
-					'_ref'       => $this->ref[$i]['var'],
-					'_child'     => $this->ref[$i]['com'],
-					'_class'     => $this->id[$i],
-					'_name'      => $this->names[$i],
-					'_before'    => $this->before[$i],
-					'_after'     => $this->after[$i],
-					'_component' => $this->getComposition($i),
-				]);
+				$this->buildWrappedOriginalComposite($i);
 				break;
 
 			case $this->component['f_comp']:
-			case $this->component['f_comp_list']:
 			case $this->component['f_comp_map']:
-
-				$this->block[$i] = new $this->types[$i]([
-					'_chain'     => $this->stack[$i],
-					'_var'       => $this->var[$i],
-					'_ref'       => $this->ref[$i]['var'],
-					'_child'     => $this->ref[$i]['com'],
-					'_class'     => $this->id[$i],
-					'_name'      => $this->names[$i],
-					'_component' => $this->getComposition($i),
-					'_exert'     => false,
-				]);
+				$this->buildFixedComposite($i);
 				break;
 
 			case $this->component['wf_comp']:
-			case $this->component['wf_comp_list']:
 			case $this->component['wf_comp_map']:
-
-				$this->block[$i] = new $this->types[$i]([
-					'_chain'     => $this->stack[$i],
-					'_var'       => $this->var[$i],
-					'_ref'       => $this->ref[$i]['var'],
-					'_child'     => $this->ref[$i]['com'],
-					'_class'     => $this->id[$i],
-					'_name'      => $this->names[$i],
-					'_before'    => $this->before[$i],
-					'_after'     => $this->after[$i],
-					'_component' => $this->getComposition($i),
-					'_exert'     => false,
-				]);
+				$this->buildWrappedFixedComposite($i);
 				break;
 
 			case $this->component['a_leaf']:
-			case $this->component['a_leaf_list']:
 			case $this->component['a_leaf_map']:
-
-				$this->block[$i] = new $this->types[$i]([
-					'_chain' => $this->stack[$i],
-					'_var'   => $this->var[$i],
-					'_ref'   => $this->ref[$i]['var'],
-					'_class' => $this->id[$i],
-					'_name'  => $this->names[$i],
-				]);
+				$this->buildOriginalLeaf($i);
 				break;
 
 			case $this->component['wa_leaf']:
-			case $this->component['wa_leaf_list']:
 			case $this->component['wa_leaf_map']:
-
-				$this->block[$i] = new $this->types[$i]([
-					'_chain'  => $this->stack[$i],
-					'_var'    => $this->var[$i],
-					'_ref'    => $this->ref[$i]['var'],
-					'_class'  => $this->id[$i],
-					'_name'   => $this->names[$i],
-					'_before' => $this->before[$i],
-					'_after'  => $this->after[$i],
-				]);
+				$this->buildWrappedOriginalLeaf($i);
 				break;
 
 			case $this->component['f_leaf']:
-			case $this->component['f_leaf_list']:
 			case $this->component['f_leaf_map']:
-
-				$this->block[$i] = new $this->types[$i]([
-					'_chain' => $this->stack[$i],
-					'_var'   => $this->var[$i],
-					'_ref'   => $this->ref[$i]['var'],
-					'_class' => $this->id[$i],
-					'_name'  => $this->names[$i],
-					'_exert' => false,
-				]);
+				$this->buildFixedLeaf($i);
 				break;
 
 			case $this->component['wf_leaf']:
-			case $this->component['wf_leaf_list']:
 			case $this->component['wf_leaf_map']:
-
-				$this->block[$i] = new $this->types[$i]([
-					'_chain'  => $this->stack[$i],
-					'_var'    => $this->var[$i],
-					'_ref'    => $this->ref[$i]['var'],
-					'_class'  => $this->id[$i],
-					'_name'   => $this->names[$i],
-					'_before' => $this->before[$i],
-					'_after'  => $this->after[$i],
-					'_exert'  => false,
-				]);
+				$this->buildWrappedFixedLeaf($i);
 				break;
 
 			case $this->component['a_text']:
-
 				$this->block[$i] = new $this->types[$i]([
 					'_text'  => $this->stack[$i][0],
 					'_class' => $this->id[$i],
@@ -560,7 +383,6 @@ final class Builder {
 				break;
 
 			case $this->component['wa_text']:
-
 				$this->block[$i] = new $this->types[$i]([
 					'_text'   => $this->stack[$i][0],
 					'_class'  => $this->id[$i],
@@ -571,7 +393,6 @@ final class Builder {
 				break;
 
 			case $this->component['f_text']:
-
 				$this->block[$i] = new $this->types[$i]([
 					'_text'  => $this->stack[$i][0],
 					'_class' => $this->id[$i],
@@ -581,7 +402,6 @@ final class Builder {
 				break;
 
 			case $this->component['wf_text']:
-
 				$this->block[$i] = new $this->types[$i]([
 					'_text'   => $this->stack[$i][0],
 					'_class'  => $this->id[$i],
@@ -604,7 +424,6 @@ final class Builder {
 				else {
 					$this->block[$i] = Component::emulate();
 				}
-
 				break;
 
 			case $this->component['w_variator']:
@@ -621,45 +440,18 @@ final class Builder {
 				else {
 					$this->block[$i] = Component::emulate();
 				}
-
 				break;
 
 			case $this->component['complex']:
-				$this->block[$i] = new $this->types[$i]([
-					'_chain'     => $this->stack[$i],
-					'_var'       => $this->var[$i],
-					'_ref'       => $this->ref[$i]['var'],
-					'_child'     => $this->ref[$i]['com'],
-					'_class'     => $this->id[$i],
-					'_name'      => $this->names[$i],
-					'_component' => $this->getComposition($i),
-					'_global'    => $this->globs,
-					'_first'     => $cfg->global_begin,
-					'_last'      => $cfg->global_end,
-				]);
-
+				$this->buildComplex($i);
 				break;
 
 			case $this->component['document']:
-				$this->block[$i] = new $this->types[$i]([
-					'_chain'  => $this->stack[$i],
-					'_var'    => $this->var[$i],
-					'_ref'    => $this->ref[$i]['var'],
-					'_child'  => $this->ref[$i]['com'],
-					'_class'  => $this->id[$i],
-					'_name'   => $this->names[$i],
-					'_global' => $this->globs,
-					'_first'  => $cfg->global_begin,
-					'_last'   => $cfg->global_end,
-				]);
-
+				$this->buildDocument($i);
 				break;
 
 			default:
-				$this->block[$i] = new Emulator([
-					'_class' => 'Emulator',
-					'_name'  => 'Emulator',
-				]);
+				$this->block[$i] = Component::emulate();
 			}
 		}
 	}
