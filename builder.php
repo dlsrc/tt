@@ -325,20 +325,7 @@ final class Builder {
 		}
 	}
 
-	private function identifyType(int $id, string $prefix): void {
-		if (!isset($this->child[$id][0])) {
-			if (empty($this->ref[$id]['var']) && empty($this->ref[$id]['com']) && isset($this->stack[$id][0]) && 1 == \count($this->stack[$id])) {
-				$comp = $prefix.'_text';
-				$this->types[$id] = $this->component[$comp];
-				return;
-			}
-
-			$leaf = true;
-		}
-		else {
-			$leaf = false;
-		}
-
+	protected function findMap(int $id, string $prefix, bool $leaf): bool {
 		foreach (\array_keys($this->var[$id]) as $name) {
 			if (\str_contains($name, Component::NS)) {
 				if ($leaf) {
@@ -349,11 +336,23 @@ final class Builder {
 				}
 
 				$this->types[$id] = $this->component[$comp];
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	protected function identifyType(int $id, string $prefix): void {
+		if ($leaf = !isset($this->child[$id][0])) {
+			if (empty($this->ref[$id]['var']) && empty($this->ref[$id]['com']) && isset($this->stack[$id][0]) && 1 == \count($this->stack[$id])) {
+				$comp = $prefix.'_text';
+				$this->types[$id] = $this->component[$comp];
 				return;
 			}
 		}
 
-		if ($leaf) {
+		if (!$this->findMap($id, $prefix, $leaf) && $leaf) {
 			$comp = $prefix.'_leaf';
 			$this->types[$id] = $this->component[$comp];
 		}
