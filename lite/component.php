@@ -18,35 +18,6 @@
 declare(strict_types=1);
 namespace dl\tt\lite;
 
-use \dl\tt\Wrapped;
-use \dl\tt\Derivative;
-
-use \dl\tt\Childless;
-use \dl\tt\DependentComponent;
-use \dl\tt\IndependentComponent;
-use \dl\tt\ReadyComposite;
-use \dl\tt\ReadyLeaf;
-use \dl\tt\ReadyText;
-use \dl\tt\ReadyVariant;
-use \dl\tt\WrappedComponent;
-use \dl\tt\RootComponent;
-use \dl\tt\InsertionStub;
-use \dl\tt\RawResult;
-use \dl\tt\Result;
-use \dl\tt\WrappedResult;
-use \dl\tt\DependentInsert;
-use \dl\tt\DependentCompositeResult;
-use \dl\tt\DependentLeafResult;
-use \dl\tt\DependentTextResult;
-use \dl\tt\DependentResult;
-use \dl\tt\WrappedDependentResult;
-
-use \dl\tt\Component;
-use \dl\tt\Composite;
-use \dl\tt\Variant;
-use \dl\tt\Text;
-use \dl\tt\DependentText;
-
 trait Sequence {
 	protected array $_ref;
 	protected array $_chain;
@@ -85,97 +56,6 @@ trait Sequence {
     }
 }
 
-abstract class Leaf extends Component {
-    use Sequence;
-	use Childless;
-
-	final public function common(string $name, int|float|string $value): void {
-		if (isset($this->_chain[$name])) {
-			$this->_chain[$name] = $value;
-		}
-	}
-}
-
-abstract class Performer extends Composite {
-    use Sequence;
-
-	final public function __clone(): void {
-		foreach (\array_keys($this->_component) as $name) {
-			$this->_component[$name] = clone $this->_component[$name];
-		}
-	}
-
-	final public function __call(string $name, array $data): bool {
-        if (!isset($this->_component[$name])) {
-    		Component::error(Info::message('e_no_child', $name), Code::Component);
-	    	return false;
-        }
-
-        if (isset($data[1])) {
-            $this->_component[$name]($data[0], $data[1]);
-        }
-        elseif (isset($data[0])) {
-            $this->_component[$name]($data[0]);
-        }
-
-        return true;
-	}
-
-	final public function __get(string $name): Component {
-		if (isset($this->_component[$name])) {
-			return $this->_component[$name];
-		}
-
-		Component::error(Info::message('e_no_child', $name), Code::Component);
-		return Component::emulate();
-	}
-
-	final public function __unset(string $name): void {
-		if (isset($this->_component[$name])) {
-			$this->_chain[Component::NS.$name] = $this->_component[$name]->getResult();
-			unset($this->_component[$name]);
-		}
-	}
-
-	final public function common(string $name, int|float|string $value): void {
-		if (isset($this->_chain[$name])) {
-			$this->_chain[$name] = $value;
-		}
-
-		foreach ($this->_component as $component) {
-			$component->common($name, $value);
-		}
-	}
-
-	final protected function notify(): void {
-		foreach ($this->_component as $component) {
-			$name = Component::NS.$component->getName();
-			$this->_chain[$name] = $component->getResult();
-			$component->update();
-		}
-	}
-}
-
-abstract class DependentLeaf extends Leaf {
-	use DependentComponent;
-
-	public function isReady(): bool {
-		return $this->_exert;
-	}
-}
-
-abstract class DependentPerformer extends Performer {
-    use DependentComponent;
-
-	public function isReady(): bool {
-		foreach ($this->_component as $component) {
-			if ($component->isReady()) return true;
-		}
-
-		return false;
-	}
-}
-
 trait Insertion {
 	final public function __set(string $name, int|float|string $value): void {
 		if (isset($this->_chain[$name])) {
@@ -188,7 +68,7 @@ trait InsertionMap {
 	final public function __set(string $name, int|float|string|array $value): void {
 		if (\is_array($value)) {
 			foreach ($value as $key => $val) {
-				$this->__set($name.Component::NS.$key, $val);
+				$this->__set($name.\dl\tt\Component::NS.$key, $val);
 			}
 		}
 		elseif (isset($this->_chain[$name])) {
@@ -240,125 +120,216 @@ trait LeafMaster {
 	}
 }
 
+abstract class Leaf extends \dl\tt\Component {
+    use Sequence;
+	use \dl\tt\Childless;
+
+	final public function common(string $name, int|float|string $value): void {
+		if (isset($this->_chain[$name])) {
+			$this->_chain[$name] = $value;
+		}
+	}
+}
+
+abstract class Performer extends \dl\tt\Composite {
+    use Sequence;
+
+	final public function __clone(): void {
+		foreach (\array_keys($this->_component) as $name) {
+			$this->_component[$name] = clone $this->_component[$name];
+		}
+	}
+
+	final public function __call(string $name, array $data): bool {
+        if (!isset($this->_component[$name])) {
+    		\dl\tt\Component::error(\dl\tt\Info::message('e_no_child', $name), \dl\tt\Code::Component);
+	    	return false;
+        }
+
+        if (isset($data[1])) {
+            $this->_component[$name]($data[0], $data[1]);
+        }
+        elseif (isset($data[0])) {
+            $this->_component[$name]($data[0]);
+        }
+
+        return true;
+	}
+
+	final public function __get(string $name): \dl\tt\Component {
+		if (isset($this->_component[$name])) {
+			return $this->_component[$name];
+		}
+
+		\dl\tt\Component::error(\dl\tt\Info::message('e_no_child', $name), \dl\tt\Code::Component);
+		return \dl\tt\Component::emulate();
+	}
+
+	final public function __unset(string $name): void {
+		if (isset($this->_component[$name])) {
+			$this->_chain[\dl\tt\Component::NS.$name] = $this->_component[$name]->getResult();
+			unset($this->_component[$name]);
+		}
+	}
+
+	final public function common(string $name, int|float|string $value): void {
+		if (isset($this->_chain[$name])) {
+			$this->_chain[$name] = $value;
+		}
+
+		foreach ($this->_component as $component) {
+			$component->common($name, $value);
+		}
+	}
+
+	final protected function notify(): void {
+		foreach ($this->_component as $component) {
+			$name = \dl\tt\Component::NS.$component->getName();
+			$this->_chain[$name] = $component->getResult();
+			$component->update();
+		}
+	}
+}
+
+abstract class DependentLeaf extends Leaf {
+	use \dl\tt\DependentComponent;
+
+	public function isReady(): bool {
+		return $this->_exert;
+	}
+}
+
+abstract class DependentPerformer extends Performer {
+    use \dl\tt\DependentComponent;
+
+	public function isReady(): bool {
+		foreach ($this->_component as $component) {
+			if ($component->isReady()) return true;
+		}
+
+		return false;
+	}
+}
+
 final class OriginalComposite extends Performer {
 	use Insertion;
-	use ReadyComposite;
-	use Result;
+	use \dl\tt\ReadyComposite;
+	use \dl\tt\Result;
 }
 
 final class OriginalCompositeMap extends Performer {
 	use InsertionMap;
-	use ReadyComposite;
-	use Result;
+	use \dl\tt\ReadyComposite;
+	use \dl\tt\Result;
 }
 
-final class FixedComposite extends DependentPerformer implements Derivative {
+final class FixedComposite extends DependentPerformer implements \dl\tt\Derivative {
 	use Insertion;
-	use DependentCompositeResult;
-	use DependentResult;
 	use PerformerMaster;
+	use \dl\tt\DependentCompositeResult;
+	use \dl\tt\DependentResult;
 }
 
-final class FixedCompositeMap extends DependentPerformer implements Derivative {
+final class FixedCompositeMap extends DependentPerformer implements \dl\tt\Derivative {
 	use InsertionMap;
-	use DependentCompositeResult;
-	use DependentResult;
 	use PerformerMaster;
+	use \dl\tt\DependentCompositeResult;
+	use \dl\tt\DependentResult;
 }
 
-final class WrappedOriginalComposite extends Performer implements Derivative, Wrapped {
-	use WrappedComponent;
-	use ReadyComposite;
+final class WrappedOriginalComposite extends Performer implements \dl\tt\Derivative, \dl\tt\Wrapped {
 	use Insertion;
-	use WrappedResult;
 	use PerformerMaster;
+	use \dl\tt\WrappedComponent;
+	use \dl\tt\ReadyComposite;
+	use \dl\tt\WrappedResult;
 }
 
-final class WrappedOriginalCompositeMap extends Performer implements Derivative, Wrapped {
-	use WrappedComponent;
-	use ReadyComposite;
+final class WrappedOriginalCompositeMap extends Performer implements \dl\tt\Derivative, \dl\tt\Wrapped {
 	use InsertionMap;
-	use WrappedResult;
 	use PerformerMaster;
+	use \dl\tt\WrappedComponent;
+	use \dl\tt\ReadyComposite;
+	use \dl\tt\WrappedResult;
 }
 
-final class WrappedFixedComposite extends DependentPerformer implements Derivative, Wrapped {
-	use WrappedComponent;
+final class WrappedFixedComposite extends DependentPerformer implements \dl\tt\Derivative, \dl\tt\Wrapped {
 	use Insertion;
-	use DependentCompositeResult;
-	use WrappedDependentResult;
 	use PerformerMaster;
+	use \dl\tt\WrappedComponent;
+	use \dl\tt\DependentCompositeResult;
+	use \dl\tt\WrappedDependentResult;
 }
 
-final class WrappedFixedCompositeMap extends DependentPerformer implements Derivative, Wrapped {
-	use WrappedComponent;
+final class WrappedFixedCompositeMap extends DependentPerformer implements \dl\tt\Derivative, \dl\tt\Wrapped {
 	use InsertionMap;
-	use DependentCompositeResult;
-	use WrappedDependentResult;
 	use PerformerMaster;
+	use \dl\tt\WrappedComponent;
+	use \dl\tt\DependentCompositeResult;
+	use \dl\tt\WrappedDependentResult;
 }
 
 final class OriginalLeaf extends Leaf {
 	use Insertion;
-	use ReadyLeaf;
-	use Result;
+	use \dl\tt\ReadyLeaf;
+	use \dl\tt\Result;
 }
 
 final class OriginalLeafMap extends Leaf {
 	use InsertionMap;
-	use ReadyLeaf;
-	use Result;
+	use \dl\tt\ReadyLeaf;
+	use \dl\tt\Result;
 }
 
-final class FixedLeaf extends DependentLeaf implements Derivative {
+final class FixedLeaf extends DependentLeaf implements \dl\tt\Derivative {
 	use Insertion;
-	use DependentLeafResult;
-	use DependentResult;
 	use LeafMaster;
+	use \dl\tt\DependentLeafResult;
+	use \dl\tt\DependentResult;
 }
 
-final class FixedLeafMap extends DependentLeaf implements Derivative {
+final class FixedLeafMap extends DependentLeaf implements \dl\tt\Derivative {
 	use InsertionMap;
-	use DependentLeafResult;
-	use DependentResult;
 	use LeafMaster;
+	use \dl\tt\DependentLeafResult;
+	use \dl\tt\DependentResult;
 }
 
-final class WrappedOriginalLeaf extends Leaf implements Derivative, Wrapped {
-	use WrappedComponent;
-	use ReadyLeaf;
+final class WrappedOriginalLeaf extends Leaf implements \dl\tt\Derivative, \dl\tt\Wrapped {
 	use Insertion;
-	use WrappedResult;
 	use LeafMaster;
+	use \dl\tt\WrappedComponent;
+	use \dl\tt\ReadyLeaf;
+	use \dl\tt\WrappedResult;
 }
 
-final class WrappedOriginalLeafMap extends Leaf implements Derivative, Wrapped {
-	use WrappedComponent;
-	use ReadyLeaf;
+final class WrappedOriginalLeafMap extends Leaf implements \dl\tt\Derivative, \dl\tt\Wrapped {
 	use InsertionMap;
-	use WrappedResult;
 	use LeafMaster;
+	use \dl\tt\WrappedComponent;
+	use \dl\tt\ReadyLeaf;
+	use \dl\tt\WrappedResult;
 }
 
-final class WrappedFixedLeaf extends DependentLeaf implements Derivative, Wrapped {
-	use WrappedComponent;
+final class WrappedFixedLeaf extends DependentLeaf implements \dl\tt\Derivative, \dl\tt\Wrapped {
 	use Insertion;
-	use DependentLeafResult;
-	use WrappedDependentResult;
 	use LeafMaster;
+	use \dl\tt\WrappedComponent;
+	use \dl\tt\DependentLeafResult;
+	use \dl\tt\WrappedDependentResult;
 }
 
-final class WrappedFixedLeafMap extends DependentLeaf implements Derivative, Wrapped {
-	use WrappedComponent;
+final class WrappedFixedLeafMap extends DependentLeaf implements \dl\tt\Derivative, \dl\tt\Wrapped {
 	use InsertionMap;
-	use DependentLeafResult;
-	use WrappedDependentResult;
 	use LeafMaster;
+	use \dl\tt\WrappedComponent;
+	use \dl\tt\DependentLeafResult;
+	use \dl\tt\WrappedDependentResult;
 }
 
 final class Complex extends Performer {
-	use RootComponent;
-	use IndependentComponent;
+	use \dl\tt\RootComponent;
+	use \dl\tt\IndependentComponent;
 
 	protected array  $_global;
 	protected string $_first;
@@ -374,7 +345,7 @@ final class Complex extends Performer {
 	final public function __set(string $name, int|float|string|array $value): void {
 		if (\is_array($value)) {
 			foreach ($value as $key => $val) {
-				$this->__set($name.Component::NS.$key, $val);
+				$this->__set($name.\dl\tt\Component::NS.$key, $val);
 			}
 		}
 		elseif (isset($this->_chain[$name])) {
@@ -412,8 +383,8 @@ final class Complex extends Performer {
 
 final class Document extends Leaf {
 	use InsertionMap;
-	use RootComponent;
-	use IndependentComponent;
+	use \dl\tt\RootComponent;
+	use \dl\tt\IndependentComponent;
 
 	public function ready(): void {
 		$this->_result = \implode('', $this->_chain);

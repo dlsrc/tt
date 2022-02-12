@@ -10,8 +10,8 @@
 
 	namespace dl\tt;
 
-	interface \dl\tt\Wrapped;
 	interface \dl\tt\Derivative;
+	interface \dl\tt\Wrapped;
 
 	trait \dl\tt\Childless;
 	trait \dl\tt\DependentComponent;
@@ -291,6 +291,16 @@ trait WrappedDependentResult {
 	}
 }
 
+trait TextMaster {
+	public function getOriginal(): OriginalText {
+		return new OriginalText([
+			'_text'   => $this->_text,
+			'_class'  => $this->_class,
+			'_name'   => $this->_name,
+		]);
+	}
+}
+
 abstract class Component implements \dl\DirectCallable {
 	final public const NS = '.';
 
@@ -535,16 +545,6 @@ final class Emulator extends Component {
 	public function ready(): void {}
 	public function __toString(): string {return '';}
 	public function force(string $name, string $text): bool {return true;}
-}
-
-trait TextMaster {
-	public function getOriginal(): OriginalText {
-		return new OriginalText([
-			'_text'   => $this->_text,
-			'_class'  => $this->_class,
-			'_name'   => $this->_name,
-		]);
-	}
 }
 
 final class OriginalText extends Text {
