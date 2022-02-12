@@ -75,12 +75,12 @@ abstract class Builder {
 			'wa_leaf_map' => $namespace.'\\WrappedOriginalLeafMap',
 			'wf_leaf'     => $namespace.'\\WrappedFixedLeaf',
 			'wf_leaf_map' => $namespace.'\\WrappedFixedLeafMap',
-			'a_text'      => __NAMESPACE__.'\\OriginalText',
-			'f_text'      => __NAMESPACE__.'\\FixedText',
-			'wa_text'     => __NAMESPACE__.'\\WrappedOriginalText',
-			'wf_text'     => __NAMESPACE__.'\\WrappedFixedText',
-			'variator'    => __NAMESPACE__.'\\Variator',
-			'w_variator'  => __NAMESPACE__.'\\WrappedVariator',
+			'a_text'      => $namespace.'\\OriginalText',
+			'f_text'      => $namespace.'\\FixedText',
+			'wa_text'     => $namespace.'\\WrappedOriginalText',
+			'wf_text'     => $namespace.'\\WrappedFixedText',
+			'variator'    => $namespace.'\\Variator',
+			'w_variator'  => $namespace.'\\WrappedVariator',
 		];
 
 		$cfg = Config::get();
@@ -272,24 +272,15 @@ abstract class Builder {
 	}
 
 	protected function identifyType(int $id, string $prefix): void {
-		if (!isset($this->child[$id][0])) {
+		if ($leaf = !isset($this->child[$id][0])) {
 			if (empty($this->ref[$id]['var']) && empty($this->ref[$id]['com']) && isset($this->stack[$id][0]) && 1 == \count($this->stack[$id])) {
 				$comp = $prefix.'_text';
 				$this->types[$id] = $this->component[$comp];
 				return;
 			}
-
-			$leaf = true;
-		}
-		else {
-			$leaf = false;
 		}
 
-		if ($this->findMap($id, $prefix, $leaf)) {
-			return;
-		}
-
-		if ($leaf) {
+		if (!$this->findMap($id, $prefix, $leaf) && $leaf) {
 			$comp = $prefix.'_leaf';
 			$this->types[$id] = $this->component[$comp];
 		}
