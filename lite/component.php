@@ -124,9 +124,7 @@ trait PerformerMaster {
 
 		return new $class([
 			'_chain'     => $this->_chain,
-			'_var'       => $this->_var,
 			'_ref'       => $this->_ref,
-			'_child'     => $this->_child,
 			'_class'     => $this->_class,
 			'_name'      => $this->_name,
 			'_component' => $component,
@@ -145,7 +143,6 @@ trait LeafMaster {
 
 		return new $class([
 			'_chain'  => $this->_chain,
-			'_var'    => $this->_var,
 			'_ref'    => $this->_ref,
 			'_class'  => $this->_class,
 			'_name'   => $this->_name,
@@ -175,7 +172,7 @@ abstract class Performer extends \dl\tt\Composite {
 
 	final public function __call(string $name, array $data): bool {
         if (!isset($this->_component[$name])) {
-    		\dl\tt\Component::error(Info::message('e_no_child', $name), Code::Component);
+    		\dl\tt\Component::error(\dl\tt\Info::message('e_no_child', $name), \dl\tt\Code::Component);
 	    	return false;
         }
 
@@ -194,7 +191,7 @@ abstract class Performer extends \dl\tt\Composite {
 			return $this->_component[$name];
 		}
 
-		\dl\tt\Component::error(Info::message('e_no_child', $name), Code::Component);
+		\dl\tt\Component::error(\dl\tt\Info::message('e_no_child', $name), \dl\tt\Code::Component);
 		return \dl\tt\Component::emulate();
 	}
 

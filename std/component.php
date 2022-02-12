@@ -228,7 +228,7 @@ abstract class Performer extends \dl\tt\Composite {
 
 	final public function __call(string $name, array $data): bool {
         if (!isset($this->_component[$name])) {
-    		\dl\tt\Component::error(Info::message('e_no_child', $name), Code::Component);
+    		\dl\tt\Component::error(\dl\tt\Info::message('e_no_child', $name), \dl\tt\Code::Component);
 	    	return false;
         }
 
@@ -247,7 +247,7 @@ abstract class Performer extends \dl\tt\Composite {
 			return $this->_component[$name];
 		}
 
-		\dl\tt\Component::error(Info::message('e_no_child', $name), Code::Component);
+		\dl\tt\Component::error(\dl\tt\Info::message('e_no_child', $name), \dl\tt\Code::Component);
 		return \dl\tt\Component::emulate();
 	}
 

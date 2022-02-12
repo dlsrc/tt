@@ -357,7 +357,7 @@ abstract class Component implements \dl\DirectCallable {
 
 	final public static function error(string $message, Code $code, bool $pro=false): void {
 		if (Mode::Develop->current()) {
-			throw new Failure(\dl\Error::log($message, $code));
+			throw new \dl\Failure(\dl\Error::log($message, $code));
 		}
 		elseif (Mode::Rebuild->current() || $pro) {
 			\dl\Error::log($message, $code);
