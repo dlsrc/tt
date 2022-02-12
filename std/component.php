@@ -92,67 +92,33 @@ use \dl\tt\WrappedDependentResult;
 
 use \dl\tt\Component;
 use \dl\tt\Composite;
+use \dl\tt\Variant;
 use \dl\tt\Text;
 use \dl\tt\DependentText;
 
-abstract class Variant extends Composite {
-    protected string $_variant;
+trait Sequence {
+    public function __invoke(array $data, array $order=[]): void {
+        if (empty($order)) {
+            foreach ($data as $name => $value) {
+                $this->_var[$name] = $value;
+            }
+        }
+        else {
+            if (!\array_is_list($data)) {
+                $data = \array_values($data);
+            }
 
-	public function __construct(array $state) {
-		parent::__construct($state);
-        $this->_variant = $state['_variant'];
-	}
+            foreach ($order as $id => $name) {
+                $this->_var[$name] = $data[$id];
+            }
+        }
 
-	public function __clone(): void {
-		foreach (\array_keys($this->_component) as $name) {
-			$this->_component[$name] = clone $this->_component[$name];
-		}
-	}
-
-	final public function __call(string $name, array $value): bool {
-		if (isset($this->_component[$name])) {
-			$this->_variant = $name;
-
-			if (isset($value[0])) {
-				foreach ($value[0] as $key => $val) {
-					$this->_component[$name]->$key = $val;
-				}
-
-				$this->ready();
-			}
-
-			return true;
-		}
-
-		return false;
-	}
-
-	final public function __get(string $name): Component {
-		if (isset($this->_component[$name])) {
-			$this->_variant = $name;
-			return $this->_component[$name];
-		}
-
-		Component::error(Info::message('e_no_child', $name), Code::Component);
-		return Component::emulate();
-	}
-
-	final public function __unset(string $name): void {
-		unset($this->_component[$name]);
-	}
-
-	final public function __set(string $name, int|float|string|array $value): void {
-		$this->_component[$this->_variant]->$name = $value;
-	}
-
-	final public function common(string $name, int|float|string $value): void {
-		foreach ($this->_component as $component) {
-			$component->common($name, $value);
-		}
-	}
+        $this->ready();
+    }
 }
 
 abstract class Leaf extends Component {
+	use Sequence;
 	use Childless;
 
     protected array $_var;
@@ -190,6 +156,8 @@ abstract class Leaf extends Component {
 }
 
 abstract class Performer extends Composite {
+	use Sequence;
+
 	protected array $_var;
 	protected array $_ref;
 	protected array $_child;
@@ -229,20 +197,20 @@ abstract class Performer extends Composite {
 		}
 	}
 
-	final public function __call(string $name, array $value): bool {
-		if (!isset($this->_component[$name])) {
-			return false;
-		}
+	final public function __call(string $name, array $data): bool {
+        if (!isset($this->_component[$name])) {
+    		Component::error(Info::message('e_no_child', $name), Code::Component);
+	    	return false;
+        }
 
-		if (isset($value[0])) {
-			foreach ($value[0] as $key => $val) {
-				$this->_component[$name]->$key = $val;
-			}
+        if (isset($data[1])) {
+            $this->_component[$name]($data[0], $data[1]);
+        }
+        elseif (isset($data[0])) {
+            $this->_component[$name]($data[0]);
+        }
 
-			$this->_component[$name]->ready();
-		}
-
-		return true;
+        return true;
 	}
 
 	final public function __get(string $name): Component {
@@ -525,8 +493,8 @@ final class WrappedOriginalText extends Text implements Derivative, Wrapped {
 final class WrappedFixedText extends DependentText implements Derivative, Wrapped {
 	use WrappedComponent;
 	use InsertionStub;
-	use WrappedDependentResult;
 	use DependentTextResult;
+	use WrappedDependentResult;
 	use TextMaster;
 }
 
