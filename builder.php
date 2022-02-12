@@ -75,8 +75,8 @@ final class Builder {
 			'wf_leaf_map' => __NAMESPACE__.'\\WrappedFixedLeafMap',
 			'variator'    => __NAMESPACE__.'\\Variator',
 			'w_variator'  => __NAMESPACE__.'\\WrappedVariator',
-			'text'        => __NAMESPACE__.'\\Document',
-			'document'    => __NAMESPACE__.'\\Complex',
+			'document'    => __NAMESPACE__.'\\Document',
+			'complex'     => __NAMESPACE__.'\\Complex',
 		];
 
 		$open  = \preg_quote($cfg->wrap_open, '/');
@@ -293,7 +293,7 @@ final class Builder {
 		}
 	}
 
-	private function identifyType(int $id, string $leaf): void {
+	private function identifyType(int $id, string $prefix): void {
 		if (!isset($this->child[$id][0])) {
 			$this->types[$id] = $this->component[$leaf];
 		}
@@ -323,24 +323,24 @@ final class Builder {
 		for ($i = \array_key_last($this->types); $i >= 0; $i--) {
 			switch ($this->types[$i]) {
 			case $this->component['a_comp']:
-				$this->identifyType($i, 'a_leaf');
+				$this->identifyType($i, 'a');
 				break;
 
 			case $this->component['wa_comp']:
-				$this->identifyType($i, 'wa_leaf');
+				$this->identifyType($i, 'wa');
 				break;
 
 			case $this->component['f_comp']:
-				$this->identifyType($i, 'f_leaf');
+				$this->identifyType($i, 'f');
 				break;
 
 			case $this->component['wf_comp']:
-				$this->identifyType($i, 'wf_leaf');
+				$this->identifyType($i, 'wf');
 				break;
 
-			case $this->component['document']:
+			case $this->component['complex']:
 				if (!isset($this->child[$i][0])) {
-					$this->types[$i] = $this->component['text'];
+					$this->types[$i] = $this->component['document'];
 				}
 
 				break;
@@ -483,7 +483,7 @@ final class Builder {
 
 				break;
 
-			case $this->component['document']:
+			case $this->component['complex']:
 				$this->block[$i] = new $this->types[$i]([
 					'_chain'     => $this->stack[$i],
 					'_ref'       => $this->ref[$i],
@@ -497,24 +497,18 @@ final class Builder {
 
 				break;
 
-			case $this->component['text']:
+			case $this->component['document']:
 				$this->block[$i] = new $this->types[$i]([
 					'_chain'  => $this->stack[$i],
 					'_ref'    => $this->ref[$i],
 					'_class'  => $this->id[$i],
 					'_name'   => $this->names[$i],
-					'_global' => $this->globs,
-					'_first'  => $cfg->global_begin,
-					'_last'   => $cfg->global_end,
 				]);
 
 				break;
 
 			default:
-				$this->block[$i] = new Emulator([
-					'_class' => 'Emulator',
-					'_name'  => 'Emulator',
-				]);
+				$this->block[$i] = Component::emulate();
 			}
 		}
 	}

@@ -130,7 +130,7 @@ abstract class Component implements \dl\DirectCallable {
 
 	final public static function error(string $message, Code $code, bool $pro=false): void {
 		if (Mode::Develop->current()) {
-			throw new Failure(\dl\Error::log($message, $code));
+			throw new \dl\Failure(\dl\Error::log($message, $code));
 		}
 		elseif (Mode::Rebuild->current() || $pro) {
 			\dl\Error::log($message, $code);
@@ -600,9 +600,7 @@ trait PerformerActivator {
 
 		return new $class([
 			'_chain'     => $this->_chain,
-			'_var'       => $this->_var,
 			'_ref'       => $this->_ref,
-			'_child'     => $this->_child,
 			'_class'     => $this->_class,
 			'_name'      => $this->_name,
 			'_component' => $component,
@@ -621,7 +619,6 @@ trait LeafActivator {
 
 		return new $class([
 			'_chain'  => $this->_chain,
-			'_var'    => $this->_var,
 			'_ref'    => $this->_ref,
 			'_class'  => $this->_class,
 			'_name'   => $this->_name,
