@@ -49,7 +49,7 @@ trait InsertionMap {
 	final public function __set(string $name, int|float|string|array $value): void {
 		if (\is_array($value)) {
 			foreach ($value as $key => $val) {
-				$this->_var[$name.\dl\tt\Component::NS.$key] = $value;
+				$this->__set($name.\dl\tt\Component::NS.$key, $val);
 			}
 		}
 		else {
