@@ -359,7 +359,7 @@ final class Complex extends Performer {
 	public function ready(): void {
 		if ('' == $this->_result) {
 			$this->notify();
-			$this->_result = \implode('', $this->_chain);
+			$this->_result = \implode($this->_chain);
 			
 			if (!empty($this->_global)) {
 				$this->_result = \str_replace(
@@ -387,6 +387,6 @@ final class Document extends Leaf {
 	use \dl\tt\IndependentComponent;
 
 	public function ready(): void {
-		$this->_result = \implode('', $this->_chain);
+		$this->_result = \implode($this->_chain);
 	}
 }

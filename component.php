@@ -126,7 +126,7 @@ trait ReadyComposite {
 
 	public function ready(): void {
 		$this->notify();
-		$this->_result.= \implode('', $this->_chain);
+		$this->_result.= \implode($this->_chain);
 	}
 }
 
@@ -134,7 +134,7 @@ trait ReadyLeaf {
 	use IndependentComponent;
 
 	public function ready(): void {
-		$this->_result.= \implode('', $this->_chain);
+		$this->_result.= \implode($this->_chain);
 	}
 }
 
@@ -236,7 +236,7 @@ trait DependentCompositeResult {
 		if ($this->_exert) {
 			$this->_exert = false;
 			$this->notify();
-			$this->_result = \implode('', $this->_chain);
+			$this->_result = \implode($this->_chain);
 		}
 
 		return $this->_result;
@@ -247,7 +247,7 @@ trait DependentLeafResult {
 	final public function getRawResult(): string {
 		if ($this->_exert) {
 			$this->_exert = false;
-			$this->_result = \implode('', $this->_chain);
+			$this->_result = \implode($this->_chain);
 		}
 
 		return $this->_result;
