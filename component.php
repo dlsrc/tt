@@ -322,9 +322,9 @@ abstract class Component implements \dl\DirectCallable {
 	abstract public function common(string $name, string|int|float $value): void;
 	abstract public function ready(): void;
 
-    protected string $_name;
-    protected string $_class;
-    protected string $_result;
+	protected string $_name;
+	protected string $_class;
+	protected string $_result;
 
 	public function __construct(array $state) {
 		$this->_name   = $state['_name'];
@@ -366,11 +366,11 @@ abstract class Component implements \dl\DirectCallable {
 }
 
 abstract class Composite extends Component {
-    protected array $_component;
+	protected array $_component;
 
 	public function __construct(array $state) {
 		parent::__construct($state);
-        $this->_component = $state['_component'];
+		$this->_component = $state['_component'];
 	}
 
 	final public function __isset(string $name): bool {
@@ -443,11 +443,11 @@ abstract class Composite extends Component {
 }
 
 abstract class Variant extends Composite {
-    protected string $_variant;
+	protected string $_variant;
 
 	public function __construct(array $state) {
 		parent::__construct($state);
-        $this->_variant = $state['_variant'];
+		$this->_variant = $state['_variant'];
 	}
 
 	final public function __clone(): void {
@@ -456,26 +456,26 @@ abstract class Variant extends Composite {
 		}
 	}
 
-    final public function __invoke(array $data, array $order=[]): void {
+	final public function __invoke(array $data, array $order=[]): void {
 		$this->_component[$this->_variant]($data, $order);
-    }
+	}
 
 	final public function __call(string $name, array $data): bool {
-        if (!isset($this->_component[$name])) {
-    		Component::error(Info::message('e_no_child', $name), Code::Component);
-	    	return false;
-        }
+		if (!isset($this->_component[$name])) {
+			Component::error(Info::message('e_no_child', $name), Code::Component);
+			return false;
+		}
 
 		$this->_variant = $name;
 
-        if (isset($data[1])) {
-            $this->_component[$name]($data[0], $data[1]);
-        }
-        elseif (isset($data[0])) {
-            $this->_component[$name]($data[0]);
-        }
+		if (isset($data[1])) {
+			$this->_component[$name]($data[0], $data[1]);
+		}
+		elseif (isset($data[0])) {
+			$this->_component[$name]($data[0]);
+		}
 
-        return true;
+		return true;
 	}
 
 	final public function __get(string $name): Component {
@@ -510,7 +510,7 @@ abstract class Text extends Component {
 
 	public function __construct(array $state) {
 		parent::__construct($state);
-        $this->_text   = $state['_text'];
+		$this->_text = $state['_text'];
 	}
 
 	final public function __invoke(array $data, array $order=[]): void {}

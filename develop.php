@@ -22,7 +22,7 @@ trait Develop {
 	private static function develop(string $template): string {
 		if (!\is_readable($template)) {
 			Component::error(Info::message('e_no_tpl', $template), Code::Make, true);
-            return '';
+			return '';
 		}
 
 		if (!$c = Collector::make($template)) {

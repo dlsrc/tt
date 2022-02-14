@@ -206,24 +206,24 @@ abstract class Builder {
 				$this->names[$k] = $match[2];
 
 				if (isset($match[4]) && '' != $match[4]) {
-    				$match[4] = \trim($match[4]);
+					$match[4] = \trim($match[4]);
 
-				    if (0 == \preg_match($this->pattern['wrap'], $match[4], $m)) {
+					if (0 == \preg_match($this->pattern['wrap'], $match[4], $m)) {
 						$this->before[$k] = '<'.$tag.' class="'.$class.'">';
 						$this->after[$k]  = '</'.$tag.'>';
-    				}
-    				elseif ('="' == $m[2]) {
-        				$this->before[$k] = '<'.$tag.' '.$match[4].'>';
-        				$this->after[$k]  = '</'.$tag.'>';
-    				}
-    				elseif ('' == $m[2]) {
-        				$this->before[$k] = '<'.$m[1].' class="'.$class.'">';
-        				$this->after[$k]  = '</'.$m[1].'>';
-    				}
-    				else {
-        				$this->before[$k] = '<'.$match[4].'>';
-        				$this->after[$k]  = '</'.$m[1].'>';
-    				}
+					}
+					elseif ('="' == $m[2]) {
+						$this->before[$k] = '<'.$tag.' '.$match[4].'>';
+						$this->after[$k]  = '</'.$tag.'>';
+					}
+					elseif ('' == $m[2]) {
+						$this->before[$k] = '<'.$m[1].' class="'.$class.'">';
+						$this->after[$k]  = '</'.$m[1].'>';
+					}
+					else {
+						$this->before[$k] = '<'.$match[4].'>';
+						$this->after[$k]  = '</'.$m[1].'>';
+					}
 				}
 				elseif ('' == $match[3]) {
 					$this->before[$k] = '';

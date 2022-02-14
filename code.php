@@ -25,7 +25,7 @@ enum Code: int implements \dl\ErrorCodifier {
 	case Type      = 102; // Неверный тип компонента
 	case Component = 103; // Дочерний компонент отсутствует
 	case File      = 104; // Файл корневого шаблона не существует
-    case Content   = 105; // Не удалось получить содержимое файла шаблона
+	case Content   = 105; // Не удалось получить содержимое файла шаблона
 
 	public function isFatal(): bool {
 		return false;

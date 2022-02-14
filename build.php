@@ -22,8 +22,8 @@ enum Build implements \dl\PreferredCase {
 	use \dl\DefaultCase;
 	use \dl\CurrentCase;
 
-    case Std;
-    case Lite;
+	case Std;
+	case Lite;
 
 	public function ns(): string {
 		return match($this) {

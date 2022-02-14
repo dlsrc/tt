@@ -19,24 +19,24 @@ declare(strict_types=1);
 namespace dl\tt\std;
 
 trait Sequence {
-    public function __invoke(array $data, array $order=[]): void {
-        if (empty($order)) {
-            foreach ($data as $name => $value) {
-                $this->_var[$name] = $value;
-            }
-        }
-        else {
-            if (!\array_is_list($data)) {
-                $data = \array_values($data);
-            }
+	public function __invoke(array $data, array $order=[]): void {
+		if (empty($order)) {
+			foreach ($data as $name => $value) {
+				$this->_var[$name] = $value;
+			}
+		}
+		else {
+			if (!\array_is_list($data)) {
+				$data = \array_values($data);
+			}
 
-            foreach ($order as $id => $name) {
-                $this->_var[$name] = $data[$id];
-            }
-        }
+			foreach ($order as $id => $name) {
+				$this->_var[$name] = $data[$id];
+			}
+		}
 
-        $this->ready();
-    }
+		$this->ready();
+	}
 }
 
 trait Insertion {
@@ -120,15 +120,15 @@ abstract class Leaf extends \dl\tt\Component {
 	use Sequence;
 	use \dl\tt\Childless;
 
-    protected array $_var;
+	protected array $_var;
 	protected array $_ref;
 	protected array $_chain;
 
 	public function __construct(array $state) {
 		parent::__construct($state);
-        $this->_var   = $state['_var'];
-        $this->_ref   = $state['_ref'];
-        $this->_chain = $state['_chain'];
+		$this->_var   = $state['_var'];
+		$this->_ref   = $state['_ref'];
+		$this->_chain = $state['_chain'];
 
 		foreach ($this->_ref as $i => $name) {
 			$this->_chain[$i] =&$this->_var[$name];
@@ -164,10 +164,10 @@ abstract class Performer extends \dl\tt\Composite {
 
 	public function __construct(array $state) {
 		parent::__construct($state);
-        $this->_var   = $state['_var'];
-        $this->_ref   = $state['_ref'];
-        $this->_child = $state['_child'];
-        $this->_chain = $state['_chain'];
+		$this->_var   = $state['_var'];
+		$this->_ref   = $state['_ref'];
+		$this->_child = $state['_child'];
+		$this->_chain = $state['_chain'];
 
 		foreach ($this->_ref as $i => $name) {
 			$this->_chain[$i] =&$this->_var[$name];
@@ -197,19 +197,19 @@ abstract class Performer extends \dl\tt\Composite {
 	}
 
 	final public function __call(string $name, array $data): bool {
-        if (!isset($this->_component[$name])) {
-    		\dl\tt\Component::error(\dl\tt\Info::message('e_no_child', $name), \dl\tt\Code::Component);
-	    	return false;
-        }
+		if (!isset($this->_component[$name])) {
+			\dl\tt\Component::error(\dl\tt\Info::message('e_no_child', $name), \dl\tt\Code::Component);
+			return false;
+		}
 
-        if (isset($data[1])) {
-            $this->_component[$name]($data[0], $data[1]);
-        }
-        elseif (isset($data[0])) {
-            $this->_component[$name]($data[0]);
-        }
+		if (isset($data[1])) {
+			$this->_component[$name]($data[0], $data[1]);
+		}
+		elseif (isset($data[0])) {
+			$this->_component[$name]($data[0]);
+		}
 
-        return true;
+		return true;
 	}
 
 	final public function __get(string $name): \dl\tt\Component {
@@ -254,7 +254,7 @@ abstract class DependentLeaf extends Leaf {
 }
 
 abstract class DependentPerformer extends Performer {
-    use \dl\tt\DependentComponent;
+	use \dl\tt\DependentComponent;
 
 	public function isReady(): bool {
 		foreach ($this->_component as $component) {
@@ -399,7 +399,7 @@ final class Complex extends Performer {
 	public function __set(string $name, int|float|string|array $value): void {
 		if (\is_array($value)) {
 			foreach ($value as $key => $val) {
-				$this->_var[$name.\dl\tt\Component::NS.$key] = $value;
+				$this->__set($name.\dl\tt\Component::NS.$key, $val);
 			}
 		}
 		elseif (isset($this->_var[$name])) {
@@ -425,7 +425,7 @@ final class Complex extends Performer {
 		}
 	}
 
-	final public function force(string $name, string $text): bool {
+	public function force(string $name, string $text): bool {
 		if (!isset($this->_component[$name])) {
 			return false;
 		}
