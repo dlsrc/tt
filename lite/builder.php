@@ -19,6 +19,13 @@ declare(strict_types=1);
 namespace dl\tt\lite;
 
 final class Builder extends \dl\tt\Builder {
+	protected array $stack;
+
+	protected function __construct(\dl\tt\Build $build) {
+		parent::__construct($build);
+		$this->stack  = [];
+	}
+
 	protected function prepareStacks(): void {
 		$refns  = \dl\tt\Config::get()->refns;
 

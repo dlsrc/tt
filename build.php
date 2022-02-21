@@ -22,19 +22,19 @@ enum Build implements \dl\PreferredCase {
 	use \dl\DefaultCase;
 	use \dl\CurrentCase;
 
-	case Std;
+	case Fast;
 	case Lite;
 
 	public function ns(): string {
 		return match($this) {
-			self::Std  => __NAMESPACE__.'\\std',
+			self::Fast => __NAMESPACE__.'\\fast',
 			self::Lite => __NAMESPACE__.'\\lite',
 		};
 	}
 
 	public function builder(): string {
 		return match($this) {
-			self::Std  => __NAMESPACE__.'\\std\\Builder',
+			self::Fast => __NAMESPACE__.'\\fast\\Builder',
 			self::Lite => __NAMESPACE__.'\\lite\\Builder',
 		};
 	}

@@ -8,7 +8,7 @@
 
     ------------------------------------------------------------------------
 
-    class dl\tt\std\Builder
+    class dl\tt\fast\Builder
 
     ------------------------------------------------------------------------
 
@@ -16,13 +16,15 @@
 
 \******************************************************************************/
 declare(strict_types=1);
-namespace dl\tt\std;
+namespace dl\tt\fast;
 
 final class Builder extends \dl\tt\Builder {
+	protected array $stack;
 	protected array $var;
 
 	protected function __construct(\dl\tt\Build $build) {
 		parent::__construct($build);
+		$this->stack  = [];
 		$this->var = [];
 	}
 
@@ -37,7 +39,6 @@ final class Builder extends \dl\tt\Builder {
 			$this->var[$i] = [];
 
 			if (0 == \preg_match_all($this->pattern['variable'], $this->block[$i], $matches, \PREG_SET_ORDER)) {
-//				$this->stack[$i] = [$this->block[$i]];
 				continue;
 			}
 

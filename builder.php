@@ -32,10 +32,6 @@ abstract class Builder {
 	abstract protected function buildWrappedFixedLeaf(int $i): void;
 	abstract protected function buildComplex(int $i): void;
 	abstract protected function buildDocument(int $i): void;
-//	abstract protected function buildOriginalText(int $i): void;
-//	abstract protected function buildFixedText(int $i): void;
-//	abstract protected function buildWrappedOriginalText(int $i): void;
-//	abstract protected function buildWrappedFixedText(int $i): void;
 
 	protected Build $build;
 	protected array $component;
@@ -44,7 +40,6 @@ abstract class Builder {
 	protected array $names;
 	protected array $id;
 	protected array $types;
-	protected array $stack;
 	protected array $ref;
 	protected array $child;
 	protected array $globs;
@@ -122,7 +117,6 @@ abstract class Builder {
 		$this->names  = [];
 		$this->id     = [];
 		$this->types  = [];
-		$this->stack  = [];
 		$this->ref    = [];
 		$this->child  = [];
 		$this->globs  = [];

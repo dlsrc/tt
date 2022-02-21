@@ -8,7 +8,7 @@
 
     ------------------------------------------------------------------------
 
-	namespace dl\tt
+	namespace dl\tt\fast
 
     ------------------------------------------------------------------------
 
@@ -16,7 +16,7 @@
 
 \******************************************************************************/
 declare(strict_types=1);
-namespace dl\tt\std;
+namespace dl\tt\fast;
 
 trait Sequence {
 	public function __invoke(array $data, array $order=[]): void {
