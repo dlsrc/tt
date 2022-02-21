@@ -37,7 +37,7 @@ final class Builder extends \dl\tt\Builder {
 			$this->var[$i] = [];
 
 			if (0 == \preg_match_all($this->pattern['variable'], $this->block[$i], $matches, \PREG_SET_ORDER)) {
-				$this->stack[$i] = [$this->block[$i]];
+//				$this->stack[$i] = [$this->block[$i]];
 				continue;
 			}
 
@@ -101,7 +101,11 @@ final class Builder extends \dl\tt\Builder {
 		}
 	}
 
-	protected function findMap(int $id, string $prefix, bool $leaf): bool {
+	protected function isTextComponent(int $id): bool {
+		return !isset($this->stack[$id]);
+	}
+
+	protected function isMapComponent(int $id, string $prefix, bool $leaf): bool {
 		foreach (\array_keys($this->var[$id]) as $name) {
 			if (\str_contains($name, \dl\tt\Component::NS)) {
 				if ($leaf) {

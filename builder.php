@@ -20,7 +20,8 @@ namespace dl\tt;
 
 abstract class Builder {
 	abstract protected function prepareStacks(): void;
-	abstract protected function findMap(int $id, string $prefix, bool $leaf): bool;
+	abstract protected function isTextComponent(int $id): bool;
+	abstract protected function isMapComponent(int $id, string $prefix, bool $leaf): bool;
 	abstract protected function buildOriginalComposite(int $i): void;
 	abstract protected function buildWrappedOriginalComposite(int $i): void;
 	abstract protected function buildFixedComposite(int $i): void;
@@ -31,6 +32,10 @@ abstract class Builder {
 	abstract protected function buildWrappedFixedLeaf(int $i): void;
 	abstract protected function buildComplex(int $i): void;
 	abstract protected function buildDocument(int $i): void;
+//	abstract protected function buildOriginalText(int $i): void;
+//	abstract protected function buildFixedText(int $i): void;
+//	abstract protected function buildWrappedOriginalText(int $i): void;
+//	abstract protected function buildWrappedFixedText(int $i): void;
 
 	protected Build $build;
 	protected array $component;
@@ -273,14 +278,14 @@ abstract class Builder {
 
 	protected function identifyType(int $id, string $prefix): void {
 		if ($leaf = !isset($this->child[$id][0])) {
-			if (empty($this->ref[$id]['var']) && empty($this->ref[$id]['com']) && isset($this->stack[$id][0]) && 1 == \count($this->stack[$id])) {
+			if ($this->isTextComponent($id)) {
 				$comp = $prefix.'_text';
 				$this->types[$id] = $this->component[$comp];
 				return;
 			}
 		}
 
-		if (!$this->findMap($id, $prefix, $leaf) && $leaf) {
+		if (!$this->isMapComponent($id, $prefix, $leaf) && $leaf) {
 			$comp = $prefix.'_leaf';
 			$this->types[$id] = $this->component[$comp];
 		}
@@ -367,7 +372,7 @@ abstract class Builder {
 
 			case $this->component['a_text']:
 				$this->block[$i] = new $this->types[$i]([
-					'_text'  => $this->stack[$i][0],
+					'_text'  => $this->block[$i],
 					'_class' => $this->id[$i],
 					'_name'  => $this->names[$i],
 				]);
@@ -375,7 +380,7 @@ abstract class Builder {
 
 			case $this->component['wa_text']:
 				$this->block[$i] = new $this->types[$i]([
-					'_text'   => $this->stack[$i][0],
+					'_text'   => $this->block[$i],
 					'_class'  => $this->id[$i],
 					'_name'   => $this->names[$i],
 					'_before' => $this->before[$i],
@@ -385,7 +390,7 @@ abstract class Builder {
 
 			case $this->component['f_text']:
 				$this->block[$i] = new $this->types[$i]([
-					'_text'  => $this->stack[$i][0],
+					'_text'  => $this->block[$i],
 					'_class' => $this->id[$i],
 					'_name'  => $this->names[$i],
 					'_exert' => false,
@@ -394,7 +399,7 @@ abstract class Builder {
 
 			case $this->component['wf_text']:
 				$this->block[$i] = new $this->types[$i]([
-					'_text'   => $this->stack[$i][0],
+					'_text'   => $this->block[$i],
 					'_class'  => $this->id[$i],
 					'_name'   => $this->names[$i],
 					'_before' => $this->before[$i],
