@@ -77,6 +77,46 @@ trait InsertionMap {
 	}
 }
 
+trait ReadyComposite {
+	use \dl\tt\IndependentComponent;
+
+	public function ready(): void {
+		$this->notify();
+		$this->_result.= \implode($this->_chain);
+	}
+}
+
+trait ReadyLeaf {
+	use \dl\tt\IndependentComponent;
+
+	public function ready(): void {
+		$this->_result.= \implode($this->_chain);
+	}
+}
+
+trait DependentCompositeResult {
+	final public function getRawResult(): string {
+		if ($this->_exert) {
+			$this->_exert = false;
+			$this->notify();
+			$this->_result = \implode($this->_chain);
+		}
+
+		return $this->_result;
+	}
+}
+
+trait DependentLeafResult {
+	final public function getRawResult(): string {
+		if ($this->_exert) {
+			$this->_exert = false;
+			$this->_result = \implode($this->_chain);
+		}
+
+		return $this->_result;
+	}
+}
+
 trait PerformerMaster {
 	public function getOriginal(): Performer {
 		$component = [];
@@ -133,36 +173,12 @@ abstract class Leaf extends \dl\tt\Component {
 
 abstract class Performer extends \dl\tt\Composite {
 	use Sequence;
+	use \dl\tt\Performance;
 
 	final public function __clone(): void {
 		foreach (\array_keys($this->_component) as $name) {
 			$this->_component[$name] = clone $this->_component[$name];
 		}
-	}
-
-	final public function __call(string $name, array $data): bool {
-		if (!isset($this->_component[$name])) {
-			\dl\tt\Component::error(\dl\tt\Info::message('e_no_child', $name), \dl\tt\Code::Component);
-			return false;
-		}
-
-		if (isset($data[1])) {
-			$this->_component[$name]($data[0], $data[1]);
-		}
-		elseif (isset($data[0])) {
-			$this->_component[$name]($data[0]);
-		}
-
-		return true;
-	}
-
-	final public function __get(string $name): \dl\tt\Component {
-		if (isset($this->_component[$name])) {
-			return $this->_component[$name];
-		}
-
-		\dl\tt\Component::error(\dl\tt\Info::message('e_no_child', $name), \dl\tt\Code::Component);
-		return \dl\tt\Component::emulate();
 	}
 
 	final public function __unset(string $name): void {
@@ -213,117 +229,117 @@ abstract class DependentPerformer extends Performer {
 
 final class OriginalComposite extends Performer {
 	use Insertion;
-	use \dl\tt\ReadyComposite;
+	use ReadyComposite;
 	use \dl\tt\Result;
 }
 
 final class OriginalCompositeMap extends Performer {
 	use InsertionMap;
-	use \dl\tt\ReadyComposite;
+	use ReadyComposite;
 	use \dl\tt\Result;
 }
 
 final class FixedComposite extends DependentPerformer implements \dl\tt\Derivative {
 	use Insertion;
+	use DependentCompositeResult;
 	use PerformerMaster;
-	use \dl\tt\DependentCompositeResult;
 	use \dl\tt\DependentResult;
 }
 
 final class FixedCompositeMap extends DependentPerformer implements \dl\tt\Derivative {
 	use InsertionMap;
+	use DependentCompositeResult;
 	use PerformerMaster;
-	use \dl\tt\DependentCompositeResult;
 	use \dl\tt\DependentResult;
 }
 
 final class WrappedOriginalComposite extends Performer implements \dl\tt\Derivative, \dl\tt\Wrapped {
 	use Insertion;
+	use ReadyComposite;
 	use PerformerMaster;
 	use \dl\tt\WrappedComponent;
-	use \dl\tt\ReadyComposite;
 	use \dl\tt\WrappedResult;
 }
 
 final class WrappedOriginalCompositeMap extends Performer implements \dl\tt\Derivative, \dl\tt\Wrapped {
 	use InsertionMap;
+	use ReadyComposite;
 	use PerformerMaster;
 	use \dl\tt\WrappedComponent;
-	use \dl\tt\ReadyComposite;
 	use \dl\tt\WrappedResult;
 }
 
 final class WrappedFixedComposite extends DependentPerformer implements \dl\tt\Derivative, \dl\tt\Wrapped {
 	use Insertion;
+	use DependentCompositeResult;
 	use PerformerMaster;
 	use \dl\tt\WrappedComponent;
-	use \dl\tt\DependentCompositeResult;
 	use \dl\tt\WrappedDependentResult;
 }
 
 final class WrappedFixedCompositeMap extends DependentPerformer implements \dl\tt\Derivative, \dl\tt\Wrapped {
 	use InsertionMap;
+	use DependentCompositeResult;
 	use PerformerMaster;
 	use \dl\tt\WrappedComponent;
-	use \dl\tt\DependentCompositeResult;
 	use \dl\tt\WrappedDependentResult;
 }
 
 final class OriginalLeaf extends Leaf {
 	use Insertion;
-	use \dl\tt\ReadyLeaf;
+	use ReadyLeaf;
 	use \dl\tt\Result;
 }
 
 final class OriginalLeafMap extends Leaf {
 	use InsertionMap;
-	use \dl\tt\ReadyLeaf;
+	use ReadyLeaf;
 	use \dl\tt\Result;
 }
 
 final class FixedLeaf extends DependentLeaf implements \dl\tt\Derivative {
 	use Insertion;
+	use DependentLeafResult;
 	use LeafMaster;
-	use \dl\tt\DependentLeafResult;
 	use \dl\tt\DependentResult;
 }
 
 final class FixedLeafMap extends DependentLeaf implements \dl\tt\Derivative {
 	use InsertionMap;
+	use DependentLeafResult;
 	use LeafMaster;
-	use \dl\tt\DependentLeafResult;
 	use \dl\tt\DependentResult;
 }
 
 final class WrappedOriginalLeaf extends Leaf implements \dl\tt\Derivative, \dl\tt\Wrapped {
 	use Insertion;
+	use ReadyLeaf;
 	use LeafMaster;
 	use \dl\tt\WrappedComponent;
-	use \dl\tt\ReadyLeaf;
 	use \dl\tt\WrappedResult;
 }
 
 final class WrappedOriginalLeafMap extends Leaf implements \dl\tt\Derivative, \dl\tt\Wrapped {
 	use InsertionMap;
+	use ReadyLeaf;
 	use LeafMaster;
 	use \dl\tt\WrappedComponent;
-	use \dl\tt\ReadyLeaf;
 	use \dl\tt\WrappedResult;
 }
 
 final class WrappedFixedLeaf extends DependentLeaf implements \dl\tt\Derivative, \dl\tt\Wrapped {
 	use Insertion;
+	use DependentLeafResult;
 	use LeafMaster;
 	use \dl\tt\WrappedComponent;
-	use \dl\tt\DependentLeafResult;
 	use \dl\tt\WrappedDependentResult;
 }
 
 final class WrappedFixedLeafMap extends DependentLeaf implements \dl\tt\Derivative, \dl\tt\Wrapped {
 	use InsertionMap;
+	use DependentLeafResult;
 	use LeafMaster;
 	use \dl\tt\WrappedComponent;
-	use \dl\tt\DependentLeafResult;
 	use \dl\tt\WrappedDependentResult;
 }
 

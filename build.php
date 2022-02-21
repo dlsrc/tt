@@ -24,11 +24,13 @@ enum Build implements \dl\PreferredCase {
 
 	case Fast;
 	case Lite;
+	case Idle;
 
 	public function ns(): string {
 		return match($this) {
 			self::Fast => __NAMESPACE__.'\\fast',
 			self::Lite => __NAMESPACE__.'\\lite',
+			self::Idle => __NAMESPACE__.'\\idle',
 		};
 	}
 
@@ -36,6 +38,7 @@ enum Build implements \dl\PreferredCase {
 		return match($this) {
 			self::Fast => __NAMESPACE__.'\\fast\\Builder',
 			self::Lite => __NAMESPACE__.'\\lite\\Builder',
+			self::Idle => __NAMESPACE__.'\\idle\\Builder',
 		};
 	}
 }

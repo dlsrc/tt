@@ -102,6 +102,33 @@ trait Childless {
 	}
 }
 
+trait Performance {
+	final public function __call(string $name, array $data): bool {
+		if (!isset($this->_component[$name])) {
+			Component::error(Info::message('e_no_child', $name), Code::Component);
+			return false;
+		}
+
+		if (isset($data[1])) {
+			$this->_component[$name]($data[0], $data[1]);
+		}
+		elseif (isset($data[0])) {
+			$this->_component[$name]($data[0]);
+		}
+
+		return true;
+	}
+
+	final public function __get(string $name): Component {
+		if (isset($this->_component[$name])) {
+			return $this->_component[$name];
+		}
+
+		Component::error(Info::message('e_no_child', $name), Code::Component);
+		return Component::emulate();
+	}
+}
+
 trait DependentComponent {
 	protected bool $_exert;
 
@@ -118,23 +145,6 @@ trait DependentComponent {
 trait IndependentComponent {
 	public function isReady(): bool {
 		return '' != $this->_result;
-	}
-}
-
-trait ReadyComposite {
-	use IndependentComponent;
-
-	public function ready(): void {
-		$this->notify();
-		$this->_result.= \implode($this->_chain);
-	}
-}
-
-trait ReadyLeaf {
-	use IndependentComponent;
-
-	public function ready(): void {
-		$this->_result.= \implode($this->_chain);
 	}
 }
 
@@ -231,29 +241,6 @@ trait DependentInsert {
 	}
 }
 
-trait DependentCompositeResult {
-	final public function getRawResult(): string {
-		if ($this->_exert) {
-			$this->_exert = false;
-			$this->notify();
-			$this->_result = \implode($this->_chain);
-		}
-
-		return $this->_result;
-	}
-}
-
-trait DependentLeafResult {
-	final public function getRawResult(): string {
-		if ($this->_exert) {
-			$this->_exert = false;
-			$this->_result = \implode($this->_chain);
-		}
-
-		return $this->_result;
-	}
-}
-
 trait DependentTextResult {
 	final public function getRawResult(): string {
 		if ($this->_exert) {
@@ -294,9 +281,9 @@ trait WrappedDependentResult {
 trait TextMaster {
 	public function getOriginal(): OriginalText {
 		return new OriginalText([
-			'_text'   => $this->_text,
-			'_class'  => $this->_class,
-			'_name'   => $this->_name,
+			'_text'  => $this->_text,
+			'_class' => $this->_class,
+			'_name'  => $this->_name,
 		]);
 	}
 }
